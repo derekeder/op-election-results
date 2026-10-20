@@ -2,15 +2,18 @@
 
 An interactive map and table of precinct-level results for Oak Park races:
 
-- March 17, 2026 Democratic primary: U.S. Senate, comptroller, 7th Congressional District, 8th State House District, Cook County Board president, Cook County assessor and State Central Committeeperson (7th District)
-- April 1, 2025 consolidated election: village trustee, village president, library board, Elementary School District 97 board, High School District 200 board and Triton College trustee
 - April 4, 2023 consolidated election: village trustee and High School District 200 board
+- March 19, 2024 Democratic primary: 7th Congressional District, Cook County state's attorney, Clerk of the Circuit Court, Board of Review (3rd District) and County Board commissioner (1st District)
+- April 1, 2025 consolidated election: village trustee, village president, library board, Elementary School District 97 board, High School District 200 board and Triton College trustee
+- March 17, 2026 Democratic primary: U.S. Senate, comptroller, 7th Congressional District, 8th State House District, Cook County Board president, Cook County assessor and State Central Committeeperson (7th District)
 
 Every race except the village and library ones reaches beyond Oak Park; the page shows only Oak Park precincts. Only five Oak Park precincts (17, 25, 29, 30 and 31) are in the 8th State House District.
 
 ## Viewing it
 
 `index.html` is a static page with no build step or internet connection needed. Open it directly in a browser, or publish it with GitHub Pages.
+
+The URL records the selected race and map view, so a specific view can be shared, e.g. `index.html?race=d97_2025&view=Becky+Perez`. Race ids are the data file names listed below.
 
 - `css/style.css`: page styles
 - `js/d3.v7.9.0.min.js`: the D3 charting library (bundled locally)
@@ -36,7 +39,7 @@ python3 scripts/extract_results.py
 
 To add a race, drop its spreadsheet in `data/source`, add it to `RACES` in the script, run it, and add a matching entry to `RACES` at the top of `js/app.js`.
 
-- `senate_2026.json`, `comptroller_2026.json`, `congress7_2026.json`, `staterep8_2026.json`, `countypres_2026.json`, `assessor_2026.json`, `statecentral_2026.json`, `trustee_2025.json`, `president_2025.json`, `library_2025.json`, `d97_2025.json`, `d200_2025.json`, `triton_2025.json`, `trustee_2023.json`, `d200_2023.json`: one row per precinct with registered voters, ballots cast, turnout, each candidate's votes, total votes and the top vote-getter (2023 files use 2023 precinct numbers).
+- `senate_2026.json`, `comptroller_2026.json`, `congress7_2026.json`, `staterep8_2026.json`, `countypres_2026.json`, `assessor_2026.json`, `statecentral_2026.json`, `congress7_2024.json`, `statesattorney_2024.json`, `circuitclerk_2024.json`, `boardofreview_2024.json`, `countyboard1_2024.json`, `trustee_2025.json`, `president_2025.json`, `library_2025.json`, `d97_2025.json`, `d200_2025.json`, `triton_2025.json`, `trustee_2023.json`, `d200_2023.json`: one row per precinct with registered voters, ballots cast, turnout, each candidate's votes, total votes and the top vote-getter (2023 files use 2023 precinct numbers).
 - `precinct_boundaries.json`: the 32 current Oak Park precinct boundaries, with each precinct's current number and its 2023 number.
 - `oak-park-2025-trustee-results.geojson`: 2025 trustee results joined to the precinct boundaries, for GIS tools.
 

@@ -72,10 +72,19 @@ html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); fon
 .opx-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
 @media (prefers-reduced-motion: no-preference) { .opx-in path.opx-pct { animation: opxFade var(--cds-dur-slow) var(--cds-ease-out); } }
 @keyframes opxFade { from { opacity: 0; } to { opacity: 1; } }
-.opx-nav { display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: var(--cds-gap-sm) var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
+.opx-nav { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: var(--cds-gap-sm) var(--cds-gap-md); margin-bottom: var(--cds-gap-md);
+  position: sticky; top: 0; z-index: 10; padding: var(--cds-pad-sm) 0; background: var(--color-bg); border-bottom: 1px solid var(--color-border-line);
+  /* Extend the background to the window edges so content doesn't show beside it */
+  box-shadow: 0 0 0 100vmax var(--color-bg); clip-path: inset(0 -100vmax); }
 .opx-navlabel { font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-fg-muted); }
 .opx-years, .opx-races { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); }
 .opx-years button { font: inherit; font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); padding: var(--cds-pad-xs) var(--cds-pad-md); border-radius: var(--cds-radius); border: 1px solid var(--color-border-line); background: var(--color-panel); color: var(--color-fg); cursor: pointer; }
 .opx-races button { font: inherit; font-size: var(--cds-font-size-caption); padding: var(--cds-pad-xs) var(--cds-pad-md); border-radius: 999px; border: 1px solid var(--color-border-line); background: transparent; color: var(--color-fg); cursor: pointer; }
 .opx-races button[hidden] { display: none; }
+/* On narrow screens, scroll each row sideways so the sticky bar stays short */
+@media (max-width: 640px) {
+  .opx-years, .opx-races { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .opx-years::-webkit-scrollbar, .opx-races::-webkit-scrollbar { display: none; }
+  .opx-years button, .opx-races button { flex: none; white-space: nowrap; }
+}
 .opx-nomap { min-height: 160px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--color-fg-muted); font-size: var(--cds-font-size-body); border: 1px dashed var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); }

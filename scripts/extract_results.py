@@ -28,6 +28,11 @@ RACES = {
     "d97_2025": "2025-OP-d97-ElectionResults.xlsx",
     "d200_2025": "2025-OP-d200-ElectionResults.xlsx",
     "triton_2025": "2025-OP-triton-ElectionResults.xlsx",
+    "congress7_2024": "2024-Primary-OP-7th-ElectionResults.xlsx",
+    "statesattorney_2024": "2024-Primary-OP-cook-states-attorney-ElectionResults.xlsx",
+    "circuitclerk_2024": "2024-Primary-OP-circuit-clerk-ElectionResults.xlsx",
+    "boardofreview_2024": "2024-Primary-OP-board-of-review-ElectionResults.xlsx",
+    "countyboard1_2024": "2024-Primary-OP-stamps-ElectionResults.xlsx",
     "trustee_2023": "2023-OP-Trustees-ElectionResults.xlsx",
     "d200_2023": "2023-OP-d200-ElectionResults.xlsx",
 }

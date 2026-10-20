@@ -1,4 +1,4 @@
-const ELECTIONS = { '2026': '2026 Democratic primary', '2025': '2025 election', '2023': '2023 election' };
+const ELECTIONS = { '2026': '2026 Democratic primary', '2025': '2025 election', '2024': '2024 Democratic primary', '2023': '2023 election' };
 
 const RACES = [
   { id: 'senate_2026', year: '2026', tab: 'U.S. Senate', office: 'U.S. senator', noun: 'U.S. Senate', date: 'March 17, 2026 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
@@ -14,6 +14,11 @@ const RACES = [
   { id: 'd97_2025', year: '2025', tab: 'District 97', office: 'Oak Park Elementary School District 97 board', noun: 'District 97 board', date: 'April 1, 2025 consolidated election', voteFor: 3, map: true },
   { id: 'd200_2025', year: '2025', tab: 'District 200', office: 'Oak Park and River Forest High School District 200 board', noun: 'District 200 board', date: 'April 1, 2025 consolidated election', voteFor: 4, map: true, scope: 'Oak Park precincts only; the district also includes River Forest' },
   { id: 'triton_2025', year: '2025', tab: 'Triton College', office: 'Triton College trustee', noun: 'Triton College trustee', date: 'April 1, 2025 consolidated election', voteFor: 3, map: true, scope: 'Oak Park precincts only; the college district covers much of western Cook County' },
+  { id: 'congress7_2024', year: '2024', tab: '7th Congressional', office: 'U.S. representative, 7th District', noun: 'U.S. representative', date: 'March 19, 2024 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
+  { id: 'statesattorney_2024', year: '2024', tab: 'State’s Attorney', office: 'Cook County state’s attorney', noun: 'state’s attorney', date: 'March 19, 2024 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
+  { id: 'circuitclerk_2024', year: '2024', tab: 'Circuit Court Clerk', office: 'Clerk of the Circuit Court of Cook County', noun: 'circuit court clerk', date: 'March 19, 2024 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
+  { id: 'boardofreview_2024', year: '2024', tab: 'Board of Review', office: 'Cook County Board of Review, 3rd District', noun: 'Board of Review', date: 'March 19, 2024 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
+  { id: 'countyboard1_2024', year: '2024', tab: 'County Board 1st District', office: 'Cook County Board commissioner, 1st District (2-year term)', noun: 'County Board commissioner', date: 'March 19, 2024 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
   { id: 'trustee_2023', year: '2023', tab: 'Trustee', office: 'Village of Oak Park trustee', noun: 'trustee', date: 'April 4, 2023 consolidated election', voteFor: 3, map: true, join: 'precinct_2023' },
   { id: 'd200_2023', year: '2023', tab: 'District 200', office: 'Oak Park and River Forest High School District 200 board', noun: 'District 200 board', date: 'April 4, 2023 consolidated election', voteFor: 3, map: true, join: 'precinct_2023', scope: 'Oak Park precincts only; the district also includes River Forest' },
 ];
@@ -74,7 +79,7 @@ const yearsEl = document.getElementById('years');
 const racesEl = document.getElementById('races');
 const kindOf = (r) => r.id.replace(/_\d{4}$/, '');
 const selectRace = (r) => { window.opx.sortKey = 'precinct'; window.opx.sortDir = 1; dash.setParams({ race: r.id, view: 'leader' }); dash.setLink('summary'); };
-[...new Set(RACES.map((r) => r.year))].forEach((year) => {
+[...new Set(RACES.map((r) => r.year))].sort().forEach((year) => {
   const b = mk('button', '', ELECTIONS[year] || year + ' election'); b.type = 'button'; b.dataset.year = year;
   b.addEventListener('click', () => {
     const cur = currentRace();
@@ -98,6 +103,10 @@ function candidatesFor(race) {
 function drawHeader(race) {
   yearsEl.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.year === race.year)));
   racesEl.querySelectorAll('button').forEach((b) => { b.hidden = b.dataset.year !== race.year; b.setAttribute('aria-pressed', String(b.dataset.race === race.id)); });
+  // When the row scrolls sideways (narrow screens), keep the selected race in view
+  const sel = racesEl.querySelector('[aria-pressed="true"]');
+  const left = sel.offsetLeft - racesEl.offsetLeft;
+  if (left < racesEl.scrollLeft || left + sel.offsetWidth > racesEl.scrollLeft + racesEl.clientWidth) racesEl.scrollLeft = left - 16;
   document.getElementById('race-title').textContent = race.year + ' ' + race.tab + ' results by precinct';
   document.getElementById('race-sub').textContent = race.date + ' · ' + race.office + ', vote for ' + race.voteFor + (race.scope ? ' · ' + race.scope : '');
   const o = dash.data('overall_' + race.id);
@@ -277,6 +286,8 @@ function drawTable(race, cands) {
   head.replaceChildren(); tb.replaceChildren();
   const cols = [{ k: 'precinct', label: 'Precinct' }, { k: 'ballots_cast', label: 'Ballots' }, { k: 'turnout_pct', label: 'Turnout %' }]
     .concat(cands.map((c) => ({ k: c.name, label: lastName(c.name), cand: true }))).concat([{ k: 'top_candidate', label: 'Top vote-getter' }]);
+  // A link or back button can switch races without resetting the sort
+  if (!cols.some((c) => c.k === window.opx.sortKey)) { window.opx.sortKey = 'precinct'; window.opx.sortDir = 1; }
   const { sortKey, sortDir } = window.opx;
   cols.forEach((c) => {
     const th = mk('th'); th.dataset.field = c.k;
