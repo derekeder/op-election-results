@@ -18,7 +18,7 @@
     calc: (id, s) => { calcs[id] = { fn: s.fn, inputs: s.inputs }; }, loader: () => {},
     onData: (fn) => { L.push(fn); if (document.readyState !== 'loading') fn(); },
     params: () => ({ ...params }), setParams: (p) => { params = { ...params, ...p }; toURL(); run(); },
-    resetParams: () => { params = { ...defaults }; toURL(); run(); }, setLink: () => {}, refresh: () => {} };
+    resetParams: () => { params = { ...defaults }; toURL(); run(); }, setLink: () => {}, refresh: run };
   let w = window.innerWidth, t;
   window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => { if (window.innerWidth !== w) { w = window.innerWidth; run(); } }, 120); });
   document.addEventListener('DOMContentLoaded', run);

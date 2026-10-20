@@ -21,6 +21,16 @@ The URL records the selected race and map view, so a specific view can be shared
 - `js/dash.js`: small runtime that serves the data and tracks the selected race and map view
 - `js/app.js`: builds the race tabs, totals, map and table
 
+## Password
+
+The page asks for a password before showing anything, and each browser remembers it once entered. This only keeps casual visitors out: the data files (`js/data.js` and the `data/` folder) can still be downloaded directly by anyone who knows their URLs.
+
+`js/gate.js` stores a SHA-256 hash of the password, not the password itself. Entries are trimmed and lowercased before checking. To change the password, replace `HASH` with the output of:
+
+```
+node -e "console.log(require('crypto').createHash('sha256').update('new password').digest('hex'))"
+```
+
 ## Publishing on GitHub Pages
 
 1. Create a new public repository on GitHub.
