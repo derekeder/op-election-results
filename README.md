@@ -54,7 +54,7 @@ python3 scripts/extract_results.py
 To add a race, drop its spreadsheet in `data/source`, add it to `RACES` in the script, run it, and add a matching entry to `RACES` at the top of `js/app.js`.
 
 - `senate_2026.json`, `comptroller_2026.json`, `congress7_2026.json`, `staterep8_2026.json`, `countypres_2026.json`, `assessor_2026.json`, `statecentral_2026.json`, `congress7_2024.json`, `statesattorney_2024.json`, `circuitclerk_2024.json`, `boardofreview_2024.json`, `countyboard1_2024.json`, `trustee_2025.json`, `president_2025.json`, `library_2025.json`, `d97_2025.json`, `d200_2025.json`, `triton_2025.json`, `trustee_2023.json`, `d200_2023.json`: one row per precinct with registered voters, ballots cast, turnout, each candidate's votes, total votes and the top vote-getter (2023 files use 2023 precinct numbers).
-- `lean.json`: the progressive–conservative lean index for each current precinct, with each race's lean in points above or below the average precinct. `lean_races.json` lists the races and the candidates counted on each side.
+- `lean.json`: the progressive lean index for each current precinct, with each race's lean in points above or below the average precinct. `lean_races.json` lists the races and the candidates counted on each side.
 - `precinct_boundaries.json`: the 32 current Oak Park precinct boundaries, with each precinct's current number and its 2023 number.
 - `oak-park-2025-trustee-results.geojson`: 2025 trustee results joined to the precinct boundaries, for GIS tools.
 
@@ -65,9 +65,9 @@ To add a race, drop its spreadsheet in `data/source`, add it to `RACES` in the s
 - The 2023 election used the same precinct lines as today, under different numbers; precincts were renumbered 1–32 in 2024. 2023 precinct 33 is today's 30, 34 is today's 21, and 35 is today's 7; the rest kept their numbers.
 - Trustee races were vote-for-3, so a candidate's percentage is their share of all trustee votes cast, not of voters.
 
-## Progressive–conservative lean
+## Progressive lean
 
-The **Progressive–conservative lean** view scores each precinct on how progressive or conservative it votes compared with the rest of Oak Park. The candidates counted on each side are listed in `LEAN` in `scripts/extract_results.py`; edit that list and rerun the script to change the index.
+The **Progressive lean** view scores each precinct on how progressive or conservative it votes compared with the rest of Oak Park. The candidates counted on each side are listed in `LEAN` in `scripts/extract_results.py`; edit that list and rerun the script to change the index.
 
 For each race, a precinct's lean is the progressive candidates' share of the vote minus the conservative candidates' share. That is measured against the average Oak Park precinct and divided by the spread across precincts, so every race counts equally regardless of how close it was. The index is the average over the races: above 0 leans more progressive than the average precinct, below 0 more conservative. Because Oak Park as a whole votes progressive, the index is relative: a "conservative" precinct is conservative for Oak Park.
 
