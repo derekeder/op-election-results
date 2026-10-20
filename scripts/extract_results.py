@@ -40,21 +40,20 @@ RACES = {
 }
 
 # Candidates that define the progressive-conservative lean index, by race.
-# Names must match the spreadsheet column headers exactly. Left out because
+# "moderate" is optional: moderates count as neutral, pulling a precinct
+# toward the center. Names must match the spreadsheet column headers exactly.
+# Only the local consolidated elections (2023 and 2025) are used. Left out because
 # their precinct patterns barely tracked the other races: 2026 assessor
 # (Kaegi vs. Hynes), 2024 County Board 1st District (Stamps) and 2023
 # District 200 (Livingston vs. Souders).
 LEAN = {
-    "trustee_2023": {"progressive": ["Brian D. Straw", "Susan Buchanan"], "conservative": ["James Taglia", "Simone M. Boutet"]},
-    "congress7_2024": {"progressive": ["Kina Collins"], "conservative": []},
-    "statesattorney_2024": {"progressive": ["Clayton Harris III"], "conservative": ["Eileen O'Neill Burke"]},
-    "trustee_2025": {"progressive": ["Chibuike Enyia", "Jenna Leving Jacobson"], "conservative": ["James Taglia"]},
-    "library_2025": {"progressive": ["Annie K. Wilkinson", "Colin Bird-Martinez"], "conservative": []},
-    "president_2025": {"progressive": [], "conservative": ["Ravi Parakkat"]},
-    "d97_2025": {"progressive": ["Becky Perez"], "conservative": []},
-    "d200_2025": {"progressive": [], "conservative": ["Joshua Gertz", "Nathan R. Mellman"]},
-    "congress7_2026": {"progressive": ["Kina Collins"], "conservative": []},
-    "senate_2026": {"progressive": ["Robin Kelly"], "conservative": ["Raja Krishnamoorthi"]},
+    "trustee_2023": {"progressive": ["Brian D. Straw", "Susan Buchanan"], "moderate": ["Cory J. Wesley"], "conservative": ["James Taglia", "Simone M. Boutet"]},
+    "d200_2023": {"progressive": ["Jonathan Livingston"], "moderate": ["Tim Brandhorst", "Graham Y Brisben"], "conservative": ["Brian Souders"]},
+    "trustee_2025": {"progressive": ["Chibuike Enyia", "Jenna Leving Jacobson"], "moderate": ["Lucia Robinson", "Joshua VanderBerg"], "conservative": ["James Taglia"]},
+    "library_2025": {"progressive": ["Annie K. Wilkinson", "Colin Bird-Martinez", "Mika Selena Yamamoto"], "conservative": ["Megan Butman"]},
+    "president_2025": {"progressive": ["Vicki Scaman"], "conservative": ["Ravi Parakkat"]},
+    "d97_2025": {"progressive": ["Becky Perez", "Nancy Ross Dribin"], "moderate": ["Venus Hurd Johnson"], "conservative": ["Vincent Gay"]},
+    "d200_2025": {"progressive": ["Kathleen Odell", "Dave Schaafsma"], "moderate": ["Audrey Williams-Lee", "Frederick D Arkin"], "conservative": ["Joshua Gertz", "Nathan R. Mellman"]},
 }
 
 NS = {
@@ -149,14 +148,24 @@ def lean_index(datasets):
     is measured against the average Oak Park precinct and divided by the
     spread across precincts, so every race counts equally. The index is the
     average over races: above 0 leans progressive, below 0 conservative.
+
+    The index is relative, so about half of precincts land on each side. As
+    an absolute measure, races with candidates on both sides are also scored
+    on a -100 to +100 scale centered on a tie: the average progressive
+    candidate's votes minus the average conservative candidate's, divided by
+    the averages of all three groups (moderates count as 0, pulling the score
+    toward the center). abs_lean_pts averages that over those races; h2h_won
+    counts the races where the progressive side outpolled the conservative.
     """
     to_current = {b["precinct_2023"]: b["precinct"] for b in datasets["boundaries"]}
     rows = {b["precinct"]: {"precinct": b["precinct"]} for b in datasets["boundaries"]}
     scores = {p: [] for p in rows}
+    h2h = {p: [] for p in rows}
     races = []
     for race, sides in LEAN.items():
         results = datasets[race]
-        for name in sides["progressive"] + sides["conservative"]:
+        sides = {"progressive": sides["progressive"], "moderate": sides.get("moderate", []), "conservative": sides["conservative"]}
+        for name in sides["progressive"] + sides["moderate"] + sides["conservative"]:
             assert name in results[0], f"{race}: no candidate named {name!r}"
         lean = {}
         for r in results:
@@ -164,15 +173,24 @@ def lean_index(datasets):
             p = to_current[r["precinct"]] if race.endswith("_2023") else r["precinct"]
             net = sum(r[c] for c in sides["progressive"]) - sum(r[c] for c in sides["conservative"])
             lean[p] = net / r["total_votes"]
+            if sides["progressive"] and sides["conservative"]:
+                prog = statistics.mean(r[c] for c in sides["progressive"])
+                cons = statistics.mean(r[c] for c in sides["conservative"])
+                mod = statistics.mean(r[c] for c in sides["moderate"]) if sides["moderate"] else 0
+                h2h[p].append((prog - cons) / (prog + mod + cons))
         mean, sd = statistics.mean(lean.values()), statistics.pstdev(lean.values())
         for p, v in lean.items():
             # Points above or below the average precinct, for display
             rows[p][race] = round((v - mean) * 100, 1)
             scores[p].append((v - mean) / sd)
-        races.append({"race": race, **sides, "average_lean_pct": round(mean * 100, 1)})
+        races.append({"race": race, **sides, "average_lean_pct": round(mean * 100, 1),
+                      "head_to_head": bool(sides["progressive"] and sides["conservative"])})
     for p, row in rows.items():
         row["index"] = round(statistics.mean(scores[p]), 2)
         row["races"] = len(scores[p])
+        row["h2h_won"] = sum(lean > 0 for lean in h2h[p])
+        row["h2h_races"] = len(h2h[p])
+        row["abs_lean_pts"] = round(statistics.mean(h2h[p]) * 100, 1)
     return sorted(rows.values(), key=lambda r: r["precinct"]), races
 
 

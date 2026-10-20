@@ -5,29 +5,30 @@
       "Brian D. Straw",
       "Susan Buchanan"
     ],
+    "moderate": [
+      "Cory J. Wesley"
+    ],
     "conservative": [
       "James Taglia",
       "Simone M. Boutet"
     ],
-    "average_lean_pct": 19.8
+    "average_lean_pct": 19.8,
+    "head_to_head": true
   },
   {
-    "race": "congress7_2024",
+    "race": "d200_2023",
     "progressive": [
-      "Kina Collins"
+      "Jonathan Livingston"
     ],
-    "conservative": [],
-    "average_lean_pct": 37.9
-  },
-  {
-    "race": "statesattorney_2024",
-    "progressive": [
-      "Clayton Harris III"
+    "moderate": [
+      "Tim Brandhorst",
+      "Graham Y Brisben"
     ],
     "conservative": [
-      "Eileen O'Neill Burke"
+      "Brian Souders"
     ],
-    "average_lean_pct": 10.3
+    "average_lean_pct": 7.1,
+    "head_to_head": true
   },
   {
     "race": "trustee_2025",
@@ -35,61 +36,72 @@
       "Chibuike Enyia",
       "Jenna Leving Jacobson"
     ],
+    "moderate": [
+      "Lucia Robinson",
+      "Joshua VanderBerg"
+    ],
     "conservative": [
       "James Taglia"
     ],
-    "average_lean_pct": 28.8
+    "average_lean_pct": 28.8,
+    "head_to_head": true
   },
   {
     "race": "library_2025",
     "progressive": [
       "Annie K. Wilkinson",
-      "Colin Bird-Martinez"
+      "Colin Bird-Martinez",
+      "Mika Selena Yamamoto"
     ],
-    "conservative": [],
-    "average_lean_pct": 30.6
+    "moderate": [],
+    "conservative": [
+      "Megan Butman"
+    ],
+    "average_lean_pct": 28.6,
+    "head_to_head": true
   },
   {
     "race": "president_2025",
-    "progressive": [],
+    "progressive": [
+      "Vicki Scaman"
+    ],
+    "moderate": [],
     "conservative": [
       "Ravi Parakkat"
     ],
-    "average_lean_pct": -36.8
+    "average_lean_pct": 26.3,
+    "head_to_head": true
   },
   {
     "race": "d97_2025",
     "progressive": [
-      "Becky Perez"
+      "Becky Perez",
+      "Nancy Ross Dribin"
     ],
-    "conservative": [],
-    "average_lean_pct": 23.6
+    "moderate": [
+      "Venus Hurd Johnson"
+    ],
+    "conservative": [
+      "Vincent Gay"
+    ],
+    "average_lean_pct": 31.5,
+    "head_to_head": true
   },
   {
     "race": "d200_2025",
-    "progressive": [],
+    "progressive": [
+      "Kathleen Odell",
+      "Dave Schaafsma"
+    ],
+    "moderate": [
+      "Audrey Williams-Lee",
+      "Frederick D Arkin"
+    ],
     "conservative": [
       "Joshua Gertz",
       "Nathan R. Mellman"
     ],
-    "average_lean_pct": -22.5
-  },
-  {
-    "race": "congress7_2026",
-    "progressive": [
-      "Kina Collins"
-    ],
-    "conservative": [],
-    "average_lean_pct": 22.6
-  },
-  {
-    "race": "senate_2026",
-    "progressive": [
-      "Robin Kelly"
-    ],
-    "conservative": [
-      "Raja Krishnamoorthi"
-    ],
-    "average_lean_pct": -1.8
+    "average_lean_pct": 11.8,
+    "head_to_head": true
   }
 ]

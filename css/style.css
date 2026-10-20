@@ -58,6 +58,7 @@ html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); fon
 .opx-ramp { width: 9rem; height: .6rem; border-radius: 2px; display: inline-block; }
 .opx-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); min-width: 13rem; z-index: 2; }
 .opx-tip-h { color: var(--cds-text-secondary); margin-bottom: 2px; }
+.opx-tip-sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: -2px 0 var(--cds-gap-xs); }
 .opx-tip-r { display: grid; grid-template-columns: auto 1fr auto auto; gap: var(--cds-gap-xs); align-items: center; font-variant-numeric: tabular-nums; }
 .opx-tip-r .v { text-align: right; }
 .opx-tip-r .p { text-align: right; color: var(--color-fg-muted); min-width: 3.2em; }

@@ -364,13 +364,15 @@ function drawLean(race) {
   // Header
   document.getElementById('ov').hidden = true;
   document.getElementById('race-title').textContent = 'Progressive–conservative lean by precinct';
-  document.getElementById('race-sub').textContent = 'Composite of ' + lr.length + ' races, 2023–2026 · compared with the average Oak Park precinct';
+  const years = d3.extent(lr, (l) => l.title.slice(0, 4)).join('–');
+  document.getElementById('race-sub').textContent = 'Composite of ' + lr.length + ' local races, ' + years + ' · compared with the average Oak Park precinct';
   const byIndex = rows.slice().sort((a, b) => b.index - a.index);
   const take = document.getElementById('takeaway');
   take.replaceChildren();
   if (byIndex.length) {
     const nProg = rows.filter((r) => r.index > 0).length;
-    take.textContent = 'Precinct ' + byIndex[0].precinct + ' leans the most progressive and precinct ' + byIndex[byIndex.length - 1].precinct + ' the most conservative; ' + nProg + ' of ' + rows.length + ' precincts lean more progressive than the average precinct.';
+    const nH2h = rows.filter((r) => r.abs_lean_pts > 0).length;
+    take.textContent = 'Precinct ' + byIndex[0].precinct + ' leans the most progressive and precinct ' + byIndex[byIndex.length - 1].precinct + ' the most conservative; ' + nProg + ' of ' + rows.length + ' precincts lean more progressive than the average precinct. In absolute terms, ' + nH2h + ' of ' + rows.length + ' precincts favored progressive candidates.';
   }
 
   // Tiles: the ends of the scale, and what goes into it
@@ -380,7 +382,9 @@ function drawLean(race) {
   const top3 = byIndex.slice(0, 3), bot3 = byIndex.slice(-3).reverse();
   tile(LEAN_PROG, 'Most progressive precincts', top3.map((r) => r.precinct).join(', '), 'Index ' + top3.map((r) => fmtIndex(r.index)).join(', '));
   tile(LEAN_CONS, 'Most conservative precincts', bot3.map((r) => r.precinct).join(', '), 'Index ' + bot3.map((r) => fmtIndex(r.index)).join(', '));
-  tile(null, 'Races in the index', String(lr.length), '2023 to 2026, weighted equally');
+  const h2hN = lr.filter((l) => l.head_to_head).length;
+  tile(null, 'Precincts favoring progressives', rows.filter((r) => r.abs_lean_pts > 0).length + ' of ' + rows.length, 'Absolute lean above 0 across ' + h2hN + ' races');
+  tile(null, 'Races in the index', String(lr.length), 'Local races from the ' + [...new Set(lr.map((l) => l.title.slice(0, 4)))].join(' and ') + ' elections, weighted equally');
 
   // Map
   const mapBox = document.querySelector('.opx-mapbox'), tip = mapBox.querySelector('.opx-tip'), legend = document.getElementById('map-legend');
@@ -389,15 +393,17 @@ function drawLean(race) {
   const bd = dash.data('boundaries');
   if (!rows.length || bd.status !== 'ok') { mapBox.classList.add('dash-skeleton'); return; }
   mapBox.classList.remove('dash-skeleton'); mapBox.dataset.source = 'boundaries lean';
-  document.getElementById('map-title').textContent = 'Composite lean in each precinct';
-  document.getElementById('map-note').textContent = 'Blue precincts vote more progressive than the average Oak Park precinct and orange ones more conservative. For each race, the progressive candidates’ share minus the conservative candidates’ share is compared with the average precinct and scaled so every race counts equally; the index averages the ' + lr.length + ' races. Hover a precinct for its full breakdown.';
-  const maxAbs = d3.max(rows, (r) => Math.abs(r.index)) || 1;
+  // The map shows the absolute lean, centered on a tie
+  document.getElementById('map-title').textContent = 'Absolute lean in each precinct';
+  document.getElementById('map-note').textContent = 'In each race, the average progressive candidate’s votes minus the average conservative candidate’s, as a share of the progressive, moderate and conservative averages combined; moderates count as neutral and pull a precinct toward the center. The map averages this over the ' + lr.length + ' races, on a scale from −100 (all conservative) to +100 (all progressive). Blue precincts favored progressives and orange ones conservatives; the middle of the scale is a tie. The index in the tiles and table instead compares precincts with each other. Hover a precinct for its full breakdown.';
+  const maxAbs = d3.max(rows, (r) => Math.abs(r.abs_lean_pts)) || 1;
   const fill = leanFill(maxAbs);
   const byP = new Map(rows.map((r) => [String(r.precinct), r]));
   const shapes = bd.data.map((b) => ({ key: String(b.precinct), r: byP.get(String(b.precinct)), polys: polysOf(geomOf(b.geometry)) }));
-  drawPrecincts(mapBox, shapes, (r) => fill(r.index), (event, r) => {
+  drawPrecincts(mapBox, shapes, (r) => fill(r.abs_lean_pts), (event, r) => {
     tip.replaceChildren();
-    tip.appendChild(mk('div', 'opx-tip-h', 'Precinct ' + r.precinct + ' · index ' + fmtIndex(r.index)));
+    tip.appendChild(mk('div', 'opx-tip-h', 'Precinct ' + r.precinct + ' · absolute lean ' + fmtPts(r.abs_lean_pts) + ' · progressives won ' + r.h2h_won + ' of ' + r.h2h_races + ' races'));
+    tip.appendChild(mk('div', 'opx-tip-sub', 'Index ' + fmtIndex(r.index) + ' · each race’s lean vs. the average precinct:'));
     const grid = mk('div', 'opx-tip-r');
     lr.forEach((l) => {
       const sw = mk('i', 'opx-sw'); sw.style.background = r[l.race] >= 0 ? LEAN_PROG : LEAN_CONS;
@@ -409,22 +415,26 @@ function drawLean(race) {
   });
   const w = mk('span'); const ramp = mk('i', 'opx-ramp');
   ramp.style.background = `linear-gradient(90deg, ${fill(-maxAbs)}, ${fill(0)}, ${fill(maxAbs)})`;
-  w.append('More conservative ' + fmtIndex(-maxAbs), ramp, fmtIndex(maxAbs) + ' More progressive'); legend.appendChild(w);
+  w.append('Conservative ' + fmtPts(-maxAbs), ramp, fmtPts(maxAbs) + ' Progressive'); legend.appendChild(w);
+  legend.appendChild(mk('span', '', 'Scale runs from −100 (all conservative) to +100 (all progressive); 0 is a tie'));
 
   // Table
   document.getElementById('table-title').textContent = 'Lean by precinct';
-  document.getElementById('table-note').textContent = 'Index, then each race’s lean in points above (+) or below (−) the average precinct. Select a column heading to sort.';
+  document.getElementById('table-note').textContent = 'Index (relative to the average precinct); races where the average progressive candidate outpolled the average conservative one; absolute lean (−100 to +100, 0 is a tie); then each race’s lean in points above (+) or below (−) the average precinct. Select a column heading to sort.';
   const table = document.querySelector('.opx-table');
   table.dataset.source = 'lean';
   const head = table.querySelector('thead tr'), tb = table.querySelector('tbody');
   head.replaceChildren(); tb.replaceChildren();
-  const cols = [{ k: 'precinct', label: 'Precinct' }, { k: 'index', label: 'Index' }].concat(lr.map((l) => ({ k: l.race, label: l.label })));
+  const cols = [{ k: 'precinct', label: 'Precinct' }, { k: 'index', label: 'Index' }, { k: 'h2h_won', label: 'Races won' }, { k: 'abs_lean_pts', label: 'Absolute lean' }].concat(lr.map((l) => ({ k: l.race, label: l.label })));
   const sortRows = tableHeader(head, cols, () => drawLean(race));
   sortRows(rows).forEach((r) => {
     const tr = mk('tr'); tr.dataset.key = String(r.precinct);
     cols.forEach((c) => {
-      const td = mk('td', c.k === 'index' ? 'win' : '', c.k === 'precinct' ? String(r.precinct) : c.k === 'index' ? fmtIndex(r.index) : fmtPts(r[c.k]));
-      if (c.k !== 'precinct') td.style.color = r[c.k] > 0 ? 'var(--lean-prog-text)' : r[c.k] < 0 ? 'var(--lean-cons-text)' : '';
+      const text = c.k === 'precinct' ? String(r.precinct) : c.k === 'index' ? fmtIndex(r.index) : c.k === 'h2h_won' ? r.h2h_won + ' of ' + r.h2h_races : fmtPts(r[c.k]);
+      const td = mk('td', c.k === 'index' ? 'win' : '', text);
+      // Positive = progressive; head-to-head columns are centered on a tie
+      const v = c.k === 'h2h_won' ? r.h2h_won - r.h2h_races / 2 : r[c.k];
+      if (c.k !== 'precinct') td.style.color = v > 0 ? 'var(--lean-prog-text)' : v < 0 ? 'var(--lean-cons-text)' : '';
       tr.appendChild(td);
     });
     tb.appendChild(tr);
