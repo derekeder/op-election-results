@@ -48,6 +48,7 @@ html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); fon
 .opx-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
 .opx-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; }
 .opx-views { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); }
+.opx-views:empty { display: none; }
 .opx-views button { font: inherit; font-size: var(--cds-font-size-caption); padding: var(--cds-pad-xs) var(--cds-pad-sm); border-radius: 999px; border: 1px solid var(--color-border-line); background: transparent; color: var(--color-fg); cursor: pointer; display: inline-flex; align-items: center; gap: var(--cds-gap-xs); }
 .opx-views button[aria-pressed="true"], .opx-years button[aria-pressed="true"], .opx-races button[aria-pressed="true"] { background: var(--color-fg); color: var(--color-bg); border-color: var(--color-fg); }
 .opx-mapbox { position: relative; min-height: 420px; }

@@ -347,7 +347,6 @@ function drawTable(race, cands) {
 const signed = (f) => { const g = d3.format(f); return (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + g(Math.abs(v)); };
 const fmtIndex = signed('.2f'), fmtPts = signed('.1f');
 const LEAN_PROG = 'var(--c1)', LEAN_CONS = 'var(--c2)';
-const shortName = (n) => (SHORT_NAMES[n] || n.replace(/\s*"[^"]*"/g, '').replace(/,? (Jr\.|Sr\.|II|III|IV)$/, '').split(' ').pop());
 function leanRaces() {
   const d = dash.data('lean_races');
   return d.status === 'ok' ? d.data.map((l) => { const r = RACES.find((x) => x.id === l.race); return { ...l, label: r.tab + ' ’' + r.year.slice(2), title: r.year + ' ' + r.tab }; }) : [];
@@ -361,7 +360,6 @@ function leanFill(maxAbs) {
 function drawLean(race) {
   const d = dash.data('lean'), lr = leanRaces();
   const rows = d.status === 'ok' ? d.data : [];
-  const names = (l) => [l.progressive.length ? 'progressive ' + l.progressive.map(shortName).join(', ') : '', l.conservative.length ? 'conservative ' + l.conservative.map(shortName).join(', ') : ''].filter(Boolean).join('; ');
 
   // Header
   document.getElementById('ov').hidden = true;
@@ -384,37 +382,26 @@ function drawLean(race) {
   tile(LEAN_CONS, 'Most conservative precincts', bot3.map((r) => r.precinct).join(', '), 'Index ' + bot3.map((r) => fmtIndex(r.index)).join(', '));
   tile(null, 'Races in the index', String(lr.length), '2023 to 2026, weighted equally');
 
-  // Map: the composite index, or one race's lean
+  // Map
   const mapBox = document.querySelector('.opx-mapbox'), tip = mapBox.querySelector('.opx-tip'), legend = document.getElementById('map-legend');
   mapBox.querySelectorAll('svg, .opx-fail, .opx-nomap').forEach((n) => n.remove());
   legend.replaceChildren(); viewsEl.replaceChildren(); tip.hidden = true;
   const bd = dash.data('boundaries');
   if (!rows.length || bd.status !== 'ok') { mapBox.classList.add('dash-skeleton'); return; }
   mapBox.classList.remove('dash-skeleton'); mapBox.dataset.source = 'boundaries lean';
-  const vr = lr.find((l) => l.race === dash.params().view);
-  [{ id: 'leader', label: 'Composite index' }].concat(lr.map((l) => ({ id: l.race, label: l.label }))).forEach((v) => {
-    const b = mk('button', '', v.label); b.type = 'button'; b.setAttribute('aria-pressed', String(vr ? v.id === vr.race : v.id === 'leader'));
-    b.addEventListener('click', () => dash.setParams({ view: v.id }));
-    viewsEl.appendChild(b);
-  });
-  const key = vr ? vr.race : 'index';
-  const fmtV = vr ? fmtPts : fmtIndex;
-  document.getElementById('map-title').textContent = vr ? vr.title + ': lean by precinct' : 'Composite lean in each precinct';
-  document.getElementById('map-note').textContent = vr
-    ? 'The progressive candidates’ share of the vote minus the conservative candidates’ share (' + names(vr) + '), in points above or below the average precinct. Hover a precinct for its full breakdown.'
-    : 'Blue precincts vote more progressive than the average Oak Park precinct and orange ones more conservative. For each race, the progressive candidates’ share minus the conservative candidates’ share is compared with the average precinct and scaled so every race counts equally; the index averages the ' + lr.length + ' races. Hover a precinct for its full breakdown.';
-  const maxAbs = d3.max(rows, (r) => Math.abs(r[key])) || 1;
+  document.getElementById('map-title').textContent = 'Composite lean in each precinct';
+  document.getElementById('map-note').textContent = 'Blue precincts vote more progressive than the average Oak Park precinct and orange ones more conservative. For each race, the progressive candidates’ share minus the conservative candidates’ share is compared with the average precinct and scaled so every race counts equally; the index averages the ' + lr.length + ' races. Hover a precinct for its full breakdown.';
+  const maxAbs = d3.max(rows, (r) => Math.abs(r.index)) || 1;
   const fill = leanFill(maxAbs);
   const byP = new Map(rows.map((r) => [String(r.precinct), r]));
   const shapes = bd.data.map((b) => ({ key: String(b.precinct), r: byP.get(String(b.precinct)), polys: polysOf(geomOf(b.geometry)) }));
-  drawPrecincts(mapBox, shapes, (r) => fill(r[key]), (event, r) => {
+  drawPrecincts(mapBox, shapes, (r) => fill(r.index), (event, r) => {
     tip.replaceChildren();
     tip.appendChild(mk('div', 'opx-tip-h', 'Precinct ' + r.precinct + ' · index ' + fmtIndex(r.index)));
     const grid = mk('div', 'opx-tip-r');
     lr.forEach((l) => {
       const sw = mk('i', 'opx-sw'); sw.style.background = r[l.race] >= 0 ? LEAN_PROG : LEAN_CONS;
       const n = mk('span', '', l.title), v = mk('span', 'v', fmtPts(r[l.race])), q = mk('span', 'p', 'pts');
-      if (vr && l.race === vr.race) { n.style.fontWeight = '600'; v.style.fontWeight = '600'; }
       grid.append(sw, n, v, q);
     });
     tip.appendChild(grid);
@@ -422,7 +409,7 @@ function drawLean(race) {
   });
   const w = mk('span'); const ramp = mk('i', 'opx-ramp');
   ramp.style.background = `linear-gradient(90deg, ${fill(-maxAbs)}, ${fill(0)}, ${fill(maxAbs)})`;
-  w.append('More conservative ' + fmtV(-maxAbs), ramp, fmtV(maxAbs) + ' More progressive'); legend.appendChild(w);
+  w.append('More conservative ' + fmtIndex(-maxAbs), ramp, fmtIndex(maxAbs) + ' More progressive'); legend.appendChild(w);
 
   // Table
   document.getElementById('table-title').textContent = 'Lean by precinct';
