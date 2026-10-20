@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Precinct-level results for Oak Park races in the 2026 Democratic primary and the 2023 and 2025 consolidated elections.">
-<title>Oak Park Election Results by Precinct</title>
+<title>Oak Park Election Results</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="js/d3.v7.9.0.min.js"></script>
 <script src="js/data.js"></script>
@@ -13,12 +13,18 @@
 <body>
 <div id="dash-root">
 <div class="opx">
+  <header class="opx-masthead">
+    <h1 class="opx-title">Oak Park Election Results</h1>
+    <p class="opx-tagline">Results by precinct for competitive elections in Oak Park, IL, 2023–2026</p>
+  </header>
   <nav class="opx-nav" aria-label="Elections">
-    <div class="opx-years" id="years" role="group" aria-label="Election year"></div>
-    <div class="opx-races" id="races" role="group" aria-label="Race"></div>
+    <span class="opx-navlabel" id="years-label">Year</span>
+    <div class="opx-years" id="years" role="group" aria-labelledby="years-label"></div>
+    <span class="opx-navlabel" id="races-label">Race</span>
+    <div class="opx-races" id="races" role="group" aria-labelledby="races-label"></div>
   </nav>
   <header class="opx-head" id="summary">
-    <h1 id="race-title">Oak Park election results by precinct</h1>
+    <h2 id="race-title">Oak Park election results by precinct</h2>
     <p class="opx-sub"><span id="race-sub"></span> · <span id="ov-ballots" class="dash-skeleton">—</span> ballots cast, <span id="ov-turnout" class="dash-skeleton">—</span> turnout</p>
     <p class="opx-take" id="takeaway"><span class="dash-skeleton">—</span></p>
   </header>
