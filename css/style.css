@@ -52,11 +52,15 @@ html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); fon
 .opx-views button { font: inherit; font-size: var(--cds-font-size-caption); padding: var(--cds-pad-xs) var(--cds-pad-sm); border-radius: 999px; border: 1px solid var(--color-border-line); background: transparent; color: var(--color-fg); cursor: pointer; display: inline-flex; align-items: center; gap: var(--cds-gap-xs); }
 .opx-views button[aria-pressed="true"], .opx-years button[aria-pressed="true"], .opx-races button[aria-pressed="true"] { background: var(--color-fg); color: var(--color-bg); border-color: var(--color-fg); }
 .opx-mapbox { position: relative; min-height: 420px; }
-.opx-mapbox svg { display: block; }
+.opx-leaflet { height: clamp(420px, 80vh, 760px); border-radius: var(--cds-radius); background: var(--color-bg); font-family: var(--font-anthropic-sans); }
+.opx-leaflet[hidden] { display: none; }
+.opx-plabel { font-size: 12px; font-weight: 600; color: var(--color-fg); text-shadow: 0 0 2px var(--color-bg), 0 0 2px var(--color-bg), 0 0 3px var(--color-bg); white-space: nowrap; transform: translate(-50%, -50%); pointer-events: none; }
+.opx-plabel.out { color: var(--color-fg-muted); font-weight: 400; }
+.opx-leaflet .leaflet-control-attribution { font-size: 10px; }
 .opx-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); align-items: center; }
 .opx-legend span { display: inline-flex; align-items: center; gap: var(--cds-gap-xs); }
 .opx-ramp { width: 9rem; height: .6rem; border-radius: 2px; display: inline-block; }
-.opx-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); min-width: 13rem; z-index: 2; }
+.opx-tip { position: absolute; z-index: 1000; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); min-width: 13rem; z-index: 2; }
 .opx-tip-h { color: var(--cds-text-secondary); margin-bottom: 2px; }
 .opx-tip-sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: -2px 0 var(--cds-gap-xs); }
 .opx-tip-r { display: grid; grid-template-columns: auto 1fr auto auto; gap: var(--cds-gap-xs); align-items: center; font-variant-numeric: tabular-nums; }
@@ -74,8 +78,6 @@ html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); fon
 [data-dash-source-state=empty] { color: transparent; }
 .opx-fail { display: flex; align-items: center; justify-content: center; gap: var(--cds-gap-xs); color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); min-height: inherit; }
 .opx-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
-@media (prefers-reduced-motion: no-preference) { .opx-in path.opx-pct { animation: opxFade var(--cds-dur-slow) var(--cds-ease-out); } }
-@keyframes opxFade { from { opacity: 0; } to { opacity: 1; } }
 .opx-nav { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: var(--cds-gap-sm) var(--cds-gap-md); margin-bottom: var(--cds-gap-md);
   position: sticky; top: 0; z-index: 10; padding: var(--cds-pad-sm) 0; background: var(--color-bg); border-bottom: 1px solid var(--color-border-line);
   /* Extend the background to the window edges so content doesn't show beside it */

@@ -21,6 +21,10 @@ The URL records the selected race and map view, so a specific view can be shared
 - `js/dash.js`: small runtime that serves the data and tracks the selected race and map view
 - `js/app.js`: builds the race tabs, totals, map and table
 
+## Basemap
+
+The precinct map is drawn with Leaflet (`js/leaflet.1.9.4.js`, bundled locally) over CARTO's Positron basemap, or Dark Matter in dark mode. The street labels are a separate tile layer drawn above the precincts. CARTO requires an API key, set as `CARTO_KEY` in `js/app.js`. The key is visible to anyone viewing the page, so restrict it to the site's domain in your CARTO account. The basemap tiles need an internet connection; without one the precincts still draw on a plain background.
+
 ## Password
 
 The page asks for a password before showing anything, and each browser remembers it once entered. This only keeps casual visitors out: the data files (`js/data.js` and the `data/` folder) can still be downloaded directly by anyone who knows their URLs.

@@ -61,7 +61,7 @@ RACES.filter((r) => !r.composite).forEach((race) => {
   });
 });
 
-window.opx = { sortKey: 'precinct', sortDir: 1, drawnOnce: false };
+window.opx = { sortKey: 'precinct', sortDir: 1 };
 const fmt = d3.format(',');
 const pct = d3.format('.1%');
 const root = document.querySelector('.opx');
@@ -159,11 +159,12 @@ function drawMap(race, cands) {
   const box = document.querySelector('.opx-mapbox');
   const tip = box.querySelector('.opx-tip');
   const legend = document.getElementById('map-legend');
-  box.querySelectorAll('svg, .opx-fail, .opx-nomap').forEach((n) => n.remove());
+  box.querySelectorAll('.opx-fail, .opx-nomap').forEach((n) => n.remove());
   legend.replaceChildren(); viewsEl.replaceChildren(); tip.hidden = true;
 
   if (!race.map) {
     box.removeAttribute('data-source'); box.classList.remove('dash-skeleton'); box.style.minHeight = '0';
+    if (window.opx.map) window.opx.map.getContainer().hidden = true;
     document.getElementById('map-title').textContent = 'Precinct map';
     document.getElementById('map-note').textContent = '';
     box.appendChild(mk('div', 'opx-nomap', 'Oak Park’s precinct lines were redrawn after 2023 (the 2023 precincts were numbered 1–35, with 7, 21 and 30 unused), so these results can’t be drawn on the current precinct map. The table below has every 2023 precinct.'));
@@ -240,47 +241,71 @@ function drawMap(race, cands) {
   }
 }
 
-// Draw the precinct map into box. shapes: [{ key, r, polys }]; precincts without r are left blank.
+// Basemap tiles from CARTO (Positron, or Dark Matter in dark mode). The street
+// labels are a separate layer drawn above the precincts so they stay readable.
+const darkMode = () => {
+  const t = document.documentElement.dataset.theme;
+  return t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+};
+// CARTO basemaps require an API key (https://carto.com/basemaps/apikey). It is
+// visible to anyone viewing the page, so restrict it to this site's domain in CARTO.
+const CARTO_KEY = 'cb1_3nq3_5_bbfe1829675cfa977123f376';
+const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+function basemap() {
+  if (window.opx.map) return window.opx.map;
+  const box = document.querySelector('.opx-mapbox');
+  const el = document.createElement('div'); el.className = 'opx-leaflet';
+  box.insertBefore(el, box.querySelector('.opx-tip'));
+  const map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25, attributionControl: true });
+  map.createPane('labels').style.zIndex = 650;
+  map.getPane('labels').style.pointerEvents = 'none';
+  const style = darkMode() ? 'dark' : 'light';
+  const tiles = (layer, opts) => L.tileLayer('https://{s}.basemaps.cartocdn.com/' + style + '_' + layer + '/{z}/{x}/{y}{r}.png?key=' + CARTO_KEY, { subdomains: 'abcd', maxZoom: 19, ...opts }).addTo(map);
+  tiles('nolabels', { attribution: TILE_ATTRIBUTION });
+  tiles('only_labels', { pane: 'labels' });
+  window.opx.map = map;
+  window.opx.layers = L.layerGroup().addTo(map);
+  return map;
+}
+
+// Draw the precinct map into box. shapes: [{ key, r, polys }] with [lon, lat] coordinates; precincts without r are left blank.
 function drawPrecincts(box, shapes, fillOf, showTip) {
   const tip = box.querySelector('.opx-tip');
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-  shapes.forEach((s) => s.polys.forEach((poly) => poly.forEach((ring) => ring.forEach(([x, y]) => { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }))));
-  const k = Math.cos(((minY + maxY) / 2) * Math.PI / 180);
-  const W = Math.max(280, box.clientWidth), pad = 8;
-  const maxH = Math.max(420, Math.min(760, window.innerHeight * 0.85));
-  const s = Math.min((W - 2 * pad) / ((maxX - minX) * k), (maxH - 2 * pad) / (maxY - minY));
-  const H = (maxY - minY) * s + 2 * pad;
-  const ox = (W - (maxX - minX) * k * s) / 2;
-  const P = ([x, y]) => [ox + (x - minX) * k * s, pad + (maxY - y) * s];
-  box.style.minHeight = H + 'px';
+  box.style.minHeight = '';
+  const map = basemap();
+  const layers = window.opx.layers;
+  layers.clearLayers();
+  map.getContainer().hidden = false;
 
-  const bg = resolve('var(--color-bg)'), fg = resolve('var(--color-fg)');
-  const outside = resolve('var(--color-panel)'), edge = resolve('var(--color-border-line)'), muted = resolve('var(--color-fg-muted)');
-  const svg = d3.select(box).insert('svg', '.opx-tip').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Map of Oak Park precincts');
-  if (!window.opx.drawnOnce) { svg.classed('opx-in', true); window.opx.drawnOnce = true; }
+  const fg = resolve('var(--color-fg)'), bg = resolve('var(--color-bg)'), edge = resolve('var(--color-fg-muted)');
+  const base = (sh) => (sh.r
+    ? { color: bg, weight: 1.2, fillColor: fillOf(sh.r), fillOpacity: 0.78 }
+    : { color: edge, weight: 1, dashArray: '3 3', fillOpacity: 0 });
+  const toLatLng = (polys) => polys.map((poly) => poly.map((ring) => ring.map(([x, y]) => [y, x])));
+  let bounds = null;
   shapes.forEach((sh) => {
-    let path = '', bestA = 0, best = null;
-    sh.polys.forEach((poly) => {
-      poly.forEach((ring) => { path += 'M' + ring.map((pt) => P(pt).map((v) => v.toFixed(1)).join(',')).join('L') + 'Z'; });
-      const o = poly[0].map(P); let a = 0, cx = 0, cy = 0;
+    const poly = L.polygon(toLatLng(sh.polys), { ...base(sh), interactive: !!sh.r });
+    bounds = bounds ? bounds.extend(poly.getBounds()) : poly.getBounds();
+    if (sh.r) {
+      poly.on('mouseover', () => { poly.setStyle({ color: fg, weight: 2.5 }); poly.bringToFront(); });
+      poly.on('mousemove', (e) => showTip(e.originalEvent, sh.r));
+      poly.on('mouseout', () => { poly.setStyle(base(sh)); tip.hidden = true; highlight(null); });
+    }
+    layers.addLayer(poly);
+    // Label at the centroid of the precinct's largest part
+    let bestA = 0, best = null;
+    sh.polys.forEach((p) => {
+      const o = p[0]; let a = 0, cx = 0, cy = 0;
       for (let i = 0, j = o.length - 1; i < o.length; j = i++) { const f = o[j][0] * o[i][1] - o[i][0] * o[j][1]; a += f; cx += (o[j][0] + o[i][0]) * f; cy += (o[j][1] + o[i][1]) * f; }
-      if (Math.abs(a) > bestA) { bestA = Math.abs(a); best = [cx / (3 * a), cy / (3 * a)]; }
+      if (Math.abs(a) > bestA) { bestA = Math.abs(a); best = [cy / (3 * a), cx / (3 * a)]; }
     });
-    sh.path = path; sh.c = best;
+    if (best) layers.addLayer(L.marker(best, { interactive: false, keyboard: false, icon: L.divIcon({ className: 'opx-plabel' + (sh.r ? '' : ' out'), html: sh.key, iconSize: null }) }));
   });
-  svg.append('g').selectAll('path').data(shapes).join('path')
-    .attr('class', 'opx-pct').attr('d', (sh) => sh.path).attr('fill-rule', 'evenodd')
-    .attr('fill', (sh) => (sh.r ? fillOf(sh.r) : outside)).attr('stroke', (sh) => (sh.r ? bg : edge)).attr('stroke-width', 1.2)
-    .style('pointer-events', (sh) => (sh.r ? null : 'none'))
-    .on('mouseenter', (event) => { d3.select(event.currentTarget).raise().attr('stroke', fg).attr('stroke-width', 2); })
-    .on('mousemove', (event, sh) => showTip(event, sh.r))
-    .on('mouseleave', (event) => { d3.select(event.currentTarget).attr('stroke', bg).attr('stroke-width', 1.2); tip.hidden = true; highlight(null); });
-  const fs = Math.max(9, Math.min(12, W / 60));
-  svg.append('g').attr('pointer-events', 'none').selectAll('text').data(shapes.filter((sh) => sh.c)).join('text')
-    .attr('x', (sh) => sh.c[0]).attr('y', (sh) => sh.c[1]).attr('dy', '0.35em').attr('text-anchor', 'middle')
-    .attr('font-size', fs).attr('font-family', 'var(--font-anthropic-sans)')
-    .attr('fill', (sh) => (sh.r ? fg : muted)).attr('stroke', bg).attr('stroke-width', 2.5).attr('paint-order', 'stroke').attr('stroke-linejoin', 'round')
-    .text((sh) => sh.key);
+
+  // Fit Oak Park on first draw and whenever the map's width changes (it is 0 while hidden behind the password screen)
+  map.invalidateSize();
+  const w = map.getContainer().clientWidth;
+  if (w && bounds && w !== window.opx.fitWidth) { map.fitBounds(bounds, { padding: [8, 8] }); window.opx.fitWidth = w; }
 }
 
 function placeTip(box, tip, event, key) {
@@ -388,7 +413,7 @@ function drawLean(race) {
 
   // Map
   const mapBox = document.querySelector('.opx-mapbox'), tip = mapBox.querySelector('.opx-tip'), legend = document.getElementById('map-legend');
-  mapBox.querySelectorAll('svg, .opx-fail, .opx-nomap').forEach((n) => n.remove());
+  mapBox.querySelectorAll('.opx-fail, .opx-nomap').forEach((n) => n.remove());
   legend.replaceChildren(); viewsEl.replaceChildren(); tip.hidden = true;
   const bd = dash.data('boundaries');
   if (!rows.length || bd.status !== 'ok') { mapBox.classList.add('dash-skeleton'); return; }
