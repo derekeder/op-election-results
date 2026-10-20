@@ -8,7 +8,13 @@ An interactive map and table of precinct-level results for three Village of Oak 
 
 ## Viewing it
 
-`index.html` is a single self-contained page: the results, precinct boundaries and charting library are all built in, so it needs no build step or internet connection. Open it directly in a browser, or publish it with GitHub Pages.
+`index.html` is a static page with no build step or internet connection needed. Open it directly in a browser, or publish it with GitHub Pages.
+
+- `css/style.css`: page styles
+- `js/d3.v7.9.0.min.js`: the D3 charting library (bundled locally)
+- `js/data.js`: the results and precinct boundaries the page draws from
+- `js/dash.js`: small runtime that serves the data and tracks the selected race and map view
+- `js/app.js`: builds the race tabs, totals, map and table
 
 ## Publishing on GitHub Pages
 
