@@ -1,0 +1,113 @@
+[
+  {
+    "race": "trustee_2023",
+    "progressive": [
+      "Brian D. Straw",
+      "Susan Buchanan"
+    ],
+    "conservative": [
+      "James Taglia",
+      "Simone M. Boutet"
+    ],
+    "average_lean_pct": 19.8
+  },
+  {
+    "race": "d200_2023",
+    "progressive": [
+      "Jonathan Livingston"
+    ],
+    "conservative": [
+      "Brian Souders"
+    ],
+    "average_lean_pct": 7.1
+  },
+  {
+    "race": "congress7_2024",
+    "progressive": [
+      "Kina Collins"
+    ],
+    "conservative": [],
+    "average_lean_pct": 37.9
+  },
+  {
+    "race": "statesattorney_2024",
+    "progressive": [
+      "Clayton Harris III"
+    ],
+    "conservative": [
+      "Eileen O'Neill Burke"
+    ],
+    "average_lean_pct": 10.3
+  },
+  {
+    "race": "countyboard1_2024",
+    "progressive": [
+      "Tara Stamps"
+    ],
+    "conservative": [],
+    "average_lean_pct": 85.8
+  },
+  {
+    "race": "trustee_2025",
+    "progressive": [
+      "Chibuike Enyia",
+      "Jenna Leving Jacobson"
+    ],
+    "conservative": [
+      "James Taglia"
+    ],
+    "average_lean_pct": 28.8
+  },
+  {
+    "race": "library_2025",
+    "progressive": [
+      "Annie K. Wilkinson",
+      "Colin Bird-Martinez"
+    ],
+    "conservative": [],
+    "average_lean_pct": 30.6
+  },
+  {
+    "race": "president_2025",
+    "progressive": [],
+    "conservative": [
+      "Ravi Parakkat"
+    ],
+    "average_lean_pct": -36.8
+  },
+  {
+    "race": "d97_2025",
+    "progressive": [
+      "Becky Perez"
+    ],
+    "conservative": [],
+    "average_lean_pct": 23.6
+  },
+  {
+    "race": "d200_2025",
+    "progressive": [],
+    "conservative": [
+      "Joshua Gertz",
+      "Nathan R. Mellman"
+    ],
+    "average_lean_pct": -22.5
+  },
+  {
+    "race": "congress7_2026",
+    "progressive": [
+      "Kina Collins"
+    ],
+    "conservative": [],
+    "average_lean_pct": 22.6
+  },
+  {
+    "race": "senate_2026",
+    "progressive": [
+      "Robin Kelly"
+    ],
+    "conservative": [
+      "Raja Krishnamoorthi"
+    ],
+    "average_lean_pct": -1.8
+  }
+]

@@ -1,4 +1,4 @@
-const ELECTIONS = { '2026': '2026 Democratic primary', '2025': '2025 election', '2024': '2024 Democratic primary', '2023': '2023 election' };
+const ELECTIONS = { '2026': '2026 Democratic primary', '2025': '2025 election', '2024': '2024 Democratic primary', '2023': '2023 election', composite: 'Progressive–conservative lean' };
 
 const RACES = [
   { id: 'senate_2026', year: '2026', tab: 'U.S. Senate', office: 'U.S. senator', noun: 'U.S. Senate', date: 'March 17, 2026 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
@@ -20,10 +20,11 @@ const RACES = [
   { id: 'boardofreview_2024', year: '2024', tab: 'Board of Review', office: 'Cook County Board of Review, 3rd District', noun: 'Board of Review', date: 'March 19, 2024 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
   { id: 'countyboard1_2024', year: '2024', tab: 'County Board 1st District', office: 'Cook County Board commissioner, 1st District (2-year term)', noun: 'County Board commissioner', date: 'March 19, 2024 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
   { id: 'trustee_2023', year: '2023', tab: 'Trustee', office: 'Village of Oak Park trustee', noun: 'trustee', date: 'April 4, 2023 consolidated election', voteFor: 3, map: true, join: 'precinct_2023' },
+  { id: 'lean', year: 'composite', tab: 'Composite index', composite: true },
   { id: 'd200_2023', year: '2023', tab: 'District 200', office: 'Oak Park and River Forest High School District 200 board', noun: 'District 200 board', date: 'April 4, 2023 consolidated election', voteFor: 3, map: true, join: 'precinct_2023', scope: 'Oak Park precincts only; the district also includes River Forest' },
 ];
 
-RACES.forEach((race) => {
+RACES.filter((r) => !r.composite).forEach((race) => {
   dash.calc('totals_' + race.id, {
     inputs: [race.id],
     title: race.year + ' ' + race.tab + ' totals',
@@ -100,13 +101,17 @@ function candidatesFor(race) {
   return t.status === 'ok' ? t.data.map((r, i) => ({ name: r.candidate, i })) : [];
 }
 
-function drawHeader(race) {
+function drawNav(race) {
   yearsEl.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.year === race.year)));
   racesEl.querySelectorAll('button').forEach((b) => { b.hidden = b.dataset.year !== race.year; b.setAttribute('aria-pressed', String(b.dataset.race === race.id)); });
   // When the row scrolls sideways (narrow screens), keep the selected race in view
   const sel = racesEl.querySelector('[aria-pressed="true"]');
   const left = sel.offsetLeft - racesEl.offsetLeft;
   if (left < racesEl.scrollLeft || left + sel.offsetWidth > racesEl.scrollLeft + racesEl.clientWidth) racesEl.scrollLeft = left - 16;
+}
+
+function drawHeader(race) {
+  document.getElementById('ov').hidden = false;
   document.getElementById('race-title').textContent = race.year + ' ' + race.tab + ' results by precinct';
   document.getElementById('race-sub').textContent = race.date + ' · ' + race.office + ', vote for ' + race.voteFor + (race.scope ? ' · ' + race.scope : '');
   const o = dash.data('overall_' + race.id);
@@ -195,6 +200,49 @@ function drawMap(race, cands) {
   const jk = race.join || 'precinct';
   const shapes = bd.data.map((b) => ({ key: String(b[jk]), r: byP.get(String(b[jk])), polys: polysOf(geomOf(b.geometry)) }));
   const inShapes = shapes.filter((sh) => sh.r);
+  const bg = resolve('var(--color-bg)');
+  const colors = cands.map((c) => resolve(candColor(c.i)));
+  let fillOf, ext;
+  if (vc) {
+    ext = d3.extent(inShapes, (sh) => Number(sh.r[vc.name]) / Number(sh.r.total_votes));
+    const lo = d3.interpolateRgb(bg, colors[vc.i])(0.12);
+    const ramp = d3.interpolateRgb(lo, colors[vc.i]);
+    fillOf = (r) => ramp((Number(r[vc.name]) / Number(r.total_votes) - ext[0]) / ((ext[1] - ext[0]) || 1));
+  } else {
+    const margin = (r) => { const x = ranked(r); return (x[0].votes - x[1].votes) / Number(r.total_votes); };
+    ext = d3.extent(inShapes, (sh) => margin(sh.r));
+    fillOf = (r) => { const x = ranked(r); if (x[0].votes === x[1].votes) return resolve('var(--color-border-line)'); const t = 0.35 + 0.65 * ((margin(r) - ext[0]) / ((ext[1] - ext[0]) || 1)); return d3.interpolateRgb(bg, colors[x[0].i])(t); };
+  }
+  drawPrecincts(box, shapes, fillOf, showTip);
+
+  function showTip(event, r) {
+    tip.replaceChildren();
+    tip.appendChild(mk('div', 'opx-tip-h', 'Precinct ' + r.precinct + ' · ' + fmt(Number(r.ballots_cast)) + ' ballots · ' + d3.format('.1f')(Number(r.turnout_pct)) + '% turnout'));
+    const grid = mk('div', 'opx-tip-r');
+    ranked(r).forEach((c) => {
+      const sw = mk('i', 'opx-sw'); sw.style.background = candColor(c.i);
+      const n = mk('span', '', c.name), v = mk('span', 'v', fmt(c.votes)), q = mk('span', 'p', pct(c.share));
+      if (vc && c.name === vc.name) { n.style.fontWeight = '600'; v.style.fontWeight = '600'; }
+      grid.append(sw, n, v, q);
+    });
+    tip.appendChild(grid);
+    placeTip(box, tip, event, String(r.precinct));
+  }
+
+  if (vc) {
+    const w = mk('span'); const ramp = mk('i', 'opx-ramp');
+    ramp.style.background = `linear-gradient(90deg, ${d3.interpolateRgb(bg, colors[vc.i])(0.12)}, ${colors[vc.i]})`;
+    w.append(pct(ext[0]), ramp, pct(ext[1])); legend.appendChild(w);
+  } else {
+    const led = new Set(inShapes.map((sh) => ranked(sh.r)[0].name));
+    cands.forEach((c) => { if (!led.has(c.name)) return; const sp = mk('span'); const sw = mk('i', 'opx-sw'); sw.style.background = colors[c.i]; sp.append(sw, c.name); legend.appendChild(sp); });
+    if (led.size < cands.length) legend.appendChild(mk('span', '', 'Others led no precincts'));
+  }
+}
+
+// Draw the precinct map into box. shapes: [{ key, r, polys }]; precincts without r are left blank.
+function drawPrecincts(box, shapes, fillOf, showTip) {
+  const tip = box.querySelector('.opx-tip');
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   shapes.forEach((s) => s.polys.forEach((poly) => poly.forEach((ring) => ring.forEach(([x, y]) => { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }))));
   const k = Math.cos(((minY + maxY) / 2) * Math.PI / 180);
@@ -208,19 +256,6 @@ function drawMap(race, cands) {
 
   const bg = resolve('var(--color-bg)'), fg = resolve('var(--color-fg)');
   const outside = resolve('var(--color-panel)'), edge = resolve('var(--color-border-line)'), muted = resolve('var(--color-fg-muted)');
-  const colors = cands.map((c) => resolve(candColor(c.i)));
-  let fillOf, ext;
-  if (vc) {
-    ext = d3.extent(inShapes, (sh) => Number(sh.r[vc.name]) / Number(sh.r.total_votes));
-    const lo = d3.interpolateRgb(bg, colors[vc.i])(0.12);
-    const ramp = d3.interpolateRgb(lo, colors[vc.i]);
-    fillOf = (r) => ramp((Number(r[vc.name]) / Number(r.total_votes) - ext[0]) / ((ext[1] - ext[0]) || 1));
-  } else {
-    const margin = (r) => { const x = ranked(r); return (x[0].votes - x[1].votes) / Number(r.total_votes); };
-    ext = d3.extent(inShapes, (sh) => margin(sh.r));
-    fillOf = (r) => { const x = ranked(r); if (x[0].votes === x[1].votes) return resolve('var(--color-border-line)'); const t = 0.35 + 0.65 * ((margin(r) - ext[0]) / ((ext[1] - ext[0]) || 1)); return d3.interpolateRgb(bg, colors[x[0].i])(t); };
-  }
-
   const svg = d3.select(box).insert('svg', '.opx-tip').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Map of Oak Park precincts');
   if (!window.opx.drawnOnce) { svg.classed('opx-in', true); window.opx.drawnOnce = true; }
   shapes.forEach((sh) => {
@@ -246,46 +281,22 @@ function drawMap(race, cands) {
     .attr('font-size', fs).attr('font-family', 'var(--font-anthropic-sans)')
     .attr('fill', (sh) => (sh.r ? fg : muted)).attr('stroke', bg).attr('stroke-width', 2.5).attr('paint-order', 'stroke').attr('stroke-linejoin', 'round')
     .text((sh) => sh.key);
+}
 
-  function showTip(event, r) {
-    tip.replaceChildren();
-    tip.appendChild(mk('div', 'opx-tip-h', 'Precinct ' + r.precinct + ' · ' + fmt(Number(r.ballots_cast)) + ' ballots · ' + d3.format('.1f')(Number(r.turnout_pct)) + '% turnout'));
-    const grid = mk('div', 'opx-tip-r');
-    ranked(r).forEach((c) => {
-      const sw = mk('i', 'opx-sw'); sw.style.background = candColor(c.i);
-      const n = mk('span', '', c.name), v = mk('span', 'v', fmt(c.votes)), q = mk('span', 'p', pct(c.share));
-      if (vc && c.name === vc.name) { n.style.fontWeight = '600'; v.style.fontWeight = '600'; }
-      grid.append(sw, n, v, q);
-    });
-    tip.appendChild(grid); tip.hidden = false;
-    const br = box.getBoundingClientRect();
-    let x = event.clientX - br.left + 14, y = event.clientY - br.top + 14;
-    if (x + tip.offsetWidth > br.width) x = Math.max(0, event.clientX - br.left - tip.offsetWidth - 14);
-    if (y + tip.offsetHeight > br.height) y = Math.max(0, event.clientY - br.top - tip.offsetHeight - 14);
-    tip.style.left = x + 'px'; tip.style.top = y + 'px';
-    highlight(String(r.precinct));
-  }
-
-  if (vc) {
-    const w = mk('span'); const ramp = mk('i', 'opx-ramp');
-    ramp.style.background = `linear-gradient(90deg, ${d3.interpolateRgb(bg, colors[vc.i])(0.12)}, ${colors[vc.i]})`;
-    w.append(pct(ext[0]), ramp, pct(ext[1])); legend.appendChild(w);
-  } else {
-    const led = new Set(inShapes.map((sh) => ranked(sh.r)[0].name));
-    cands.forEach((c) => { if (!led.has(c.name)) return; const sp = mk('span'); const sw = mk('i', 'opx-sw'); sw.style.background = colors[c.i]; sp.append(sw, c.name); legend.appendChild(sp); });
-    if (led.size < cands.length) legend.appendChild(mk('span', '', 'Others led no precincts'));
-  }
+function placeTip(box, tip, event, key) {
+  tip.hidden = false;
+  const br = box.getBoundingClientRect();
+  let x = event.clientX - br.left + 14, y = event.clientY - br.top + 14;
+  if (x + tip.offsetWidth > br.width) x = Math.max(0, event.clientX - br.left - tip.offsetWidth - 14);
+  if (y + tip.offsetHeight > br.height) y = Math.max(0, event.clientY - br.top - tip.offsetHeight - 14);
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  highlight(key);
 }
 
 function highlight(key) { document.querySelectorAll('.opx-table tbody tr').forEach((tr) => tr.classList.toggle('hl', tr.dataset.key === key)); }
 
-function drawTable(race, cands) {
-  const table = document.querySelector('.opx-table');
-  table.dataset.source = race.id;
-  const head = table.querySelector('thead tr'), tb = table.querySelector('tbody');
-  head.replaceChildren(); tb.replaceChildren();
-  const cols = [{ k: 'precinct', label: 'Precinct' }, { k: 'ballots_cast', label: 'Ballots' }, { k: 'turnout_pct', label: 'Turnout %' }]
-    .concat(cands.map((c) => ({ k: c.name, label: lastName(c.name), cand: true }))).concat([{ k: 'top_candidate', label: 'Top vote-getter' }]);
+// Build sortable column headings; returns a function that sorts rows by the current column
+function tableHeader(head, cols, redraw) {
   // A link or back button can switch races without resetting the sort
   if (!cols.some((c) => c.k === window.opx.sortKey)) { window.opx.sortKey = 'precinct'; window.opx.sortDir = 1; }
   const { sortKey, sortDir } = window.opx;
@@ -296,16 +307,29 @@ function drawTable(race, cands) {
     b.addEventListener('click', () => {
       if (window.opx.sortKey === c.k) window.opx.sortDir *= -1;
       else { window.opx.sortKey = c.k; window.opx.sortDir = (c.k === 'precinct' || c.k === 'top_candidate') ? 1 : -1; }
-      drawTable(race, cands);
+      redraw();
     });
     th.appendChild(b); head.appendChild(th);
   });
-  const d = dash.data(race.id);
-  if (d.status !== 'ok' || !cands.length) return;
-  const rows = d.data.slice().sort((a, b) => {
+  return (rows) => rows.slice().sort((a, b) => {
     const x = a[sortKey], y = b[sortKey], nx = Number(x), ny = Number(y);
     return (!isNaN(nx) && !isNaN(ny) ? nx - ny : String(x).localeCompare(String(y))) * sortDir;
   });
+}
+
+function drawTable(race, cands) {
+  document.getElementById('table-title').textContent = 'Votes by precinct';
+  document.getElementById('table-note').textContent = 'Select a column heading to sort. Bold marks the precinct’s top vote-getter.';
+  const table = document.querySelector('.opx-table');
+  table.dataset.source = race.id;
+  const head = table.querySelector('thead tr'), tb = table.querySelector('tbody');
+  head.replaceChildren(); tb.replaceChildren();
+  const cols = [{ k: 'precinct', label: 'Precinct' }, { k: 'ballots_cast', label: 'Ballots' }, { k: 'turnout_pct', label: 'Turnout %' }]
+    .concat(cands.map((c) => ({ k: c.name, label: lastName(c.name), cand: true }))).concat([{ k: 'top_candidate', label: 'Top vote-getter' }]);
+  const sortRows = tableHeader(head, cols, () => drawTable(race, cands));
+  const d = dash.data(race.id);
+  if (d.status !== 'ok' || !cands.length) return;
+  const rows = sortRows(d.data);
   rows.forEach((r) => {
     const tr = mk('tr'); tr.dataset.key = String(r.precinct);
     const top = Math.max(...cands.map((c) => Number(r[c.name])));
@@ -319,8 +343,111 @@ function drawTable(race, cands) {
   });
 }
 
+// Composite progressive–conservative lean (computed by scripts/extract_results.py)
+const signed = (f) => { const g = d3.format(f); return (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + g(Math.abs(v)); };
+const fmtIndex = signed('.2f'), fmtPts = signed('.1f');
+const LEAN_PROG = 'var(--c1)', LEAN_CONS = 'var(--c2)';
+const shortName = (n) => (SHORT_NAMES[n] || n.replace(/\s*"[^"]*"/g, '').replace(/,? (Jr\.|Sr\.|II|III|IV)$/, '').split(' ').pop());
+function leanRaces() {
+  const d = dash.data('lean_races');
+  return d.status === 'ok' ? d.data.map((l) => { const r = RACES.find((x) => x.id === l.race); return { ...l, label: r.tab + ' ’' + r.year.slice(2), title: r.year + ' ' + r.tab }; }) : [];
+}
+// Diverging fill: conservative color below 0, progressive above, scaled to the largest value either way
+function leanFill(maxAbs) {
+  const mid = resolve('var(--color-panel)'), prog = resolve(LEAN_PROG), cons = resolve(LEAN_CONS);
+  return (v) => d3.interpolateRgb(mid, v >= 0 ? prog : cons)(Math.min(1, Math.abs(v) / maxAbs));
+}
+
+function drawLean(race) {
+  const d = dash.data('lean'), lr = leanRaces();
+  const rows = d.status === 'ok' ? d.data : [];
+  const names = (l) => [l.progressive.length ? 'progressive ' + l.progressive.map(shortName).join(', ') : '', l.conservative.length ? 'conservative ' + l.conservative.map(shortName).join(', ') : ''].filter(Boolean).join('; ');
+
+  // Header
+  document.getElementById('ov').hidden = true;
+  document.getElementById('race-title').textContent = 'Progressive–conservative lean by precinct';
+  document.getElementById('race-sub').textContent = 'Composite of ' + lr.length + ' races, 2023–2026 · compared with the average Oak Park precinct';
+  const byIndex = rows.slice().sort((a, b) => b.index - a.index);
+  const take = document.getElementById('takeaway');
+  take.replaceChildren();
+  if (byIndex.length) {
+    const nProg = rows.filter((r) => r.index > 0).length;
+    take.textContent = 'Precinct ' + byIndex[0].precinct + ' leans the most progressive and precinct ' + byIndex[byIndex.length - 1].precinct + ' the most conservative; ' + nProg + ' of ' + rows.length + ' precincts lean more progressive than the average precinct.';
+  }
+
+  // Tiles: the ends of the scale, and what goes into it
+  const box = document.getElementById('totals');
+  box.replaceChildren();
+  const tile = (color, name, num, sub) => { const t = mk('div', 'opx-tile'); const n = mk('div', 'opx-tile-name'); if (color) { const sw = mk('i', 'opx-sw'); sw.style.background = color; n.append(sw); } n.append(name); t.append(n, mk('div', 'opx-tile-num', num), mk('div', 'opx-tile-share', sub)); box.appendChild(t); };
+  const top3 = byIndex.slice(0, 3), bot3 = byIndex.slice(-3).reverse();
+  tile(LEAN_PROG, 'Most progressive precincts', top3.map((r) => r.precinct).join(', '), 'Index ' + top3.map((r) => fmtIndex(r.index)).join(', '));
+  tile(LEAN_CONS, 'Most conservative precincts', bot3.map((r) => r.precinct).join(', '), 'Index ' + bot3.map((r) => fmtIndex(r.index)).join(', '));
+  tile(null, 'Races in the index', String(lr.length), '2023 to 2026, weighted equally');
+
+  // Map: the composite index, or one race's lean
+  const mapBox = document.querySelector('.opx-mapbox'), tip = mapBox.querySelector('.opx-tip'), legend = document.getElementById('map-legend');
+  mapBox.querySelectorAll('svg, .opx-fail, .opx-nomap').forEach((n) => n.remove());
+  legend.replaceChildren(); viewsEl.replaceChildren(); tip.hidden = true;
+  const bd = dash.data('boundaries');
+  if (!rows.length || bd.status !== 'ok') { mapBox.classList.add('dash-skeleton'); return; }
+  mapBox.classList.remove('dash-skeleton'); mapBox.dataset.source = 'boundaries lean';
+  const vr = lr.find((l) => l.race === dash.params().view);
+  [{ id: 'leader', label: 'Composite index' }].concat(lr.map((l) => ({ id: l.race, label: l.label }))).forEach((v) => {
+    const b = mk('button', '', v.label); b.type = 'button'; b.setAttribute('aria-pressed', String(vr ? v.id === vr.race : v.id === 'leader'));
+    b.addEventListener('click', () => dash.setParams({ view: v.id }));
+    viewsEl.appendChild(b);
+  });
+  const key = vr ? vr.race : 'index';
+  const fmtV = vr ? fmtPts : fmtIndex;
+  document.getElementById('map-title').textContent = vr ? vr.title + ': lean by precinct' : 'Composite lean in each precinct';
+  document.getElementById('map-note').textContent = vr
+    ? 'The progressive candidates’ share of the vote minus the conservative candidates’ share (' + names(vr) + '), in points above or below the average precinct. Hover a precinct for its full breakdown.'
+    : 'Blue precincts vote more progressive than the average Oak Park precinct and orange ones more conservative. For each race, the progressive candidates’ share minus the conservative candidates’ share is compared with the average precinct and scaled so every race counts equally; the index averages the ' + lr.length + ' races. Hover a precinct for its full breakdown.';
+  const maxAbs = d3.max(rows, (r) => Math.abs(r[key])) || 1;
+  const fill = leanFill(maxAbs);
+  const byP = new Map(rows.map((r) => [String(r.precinct), r]));
+  const shapes = bd.data.map((b) => ({ key: String(b.precinct), r: byP.get(String(b.precinct)), polys: polysOf(geomOf(b.geometry)) }));
+  drawPrecincts(mapBox, shapes, (r) => fill(r[key]), (event, r) => {
+    tip.replaceChildren();
+    tip.appendChild(mk('div', 'opx-tip-h', 'Precinct ' + r.precinct + ' · index ' + fmtIndex(r.index)));
+    const grid = mk('div', 'opx-tip-r');
+    lr.forEach((l) => {
+      const sw = mk('i', 'opx-sw'); sw.style.background = r[l.race] >= 0 ? LEAN_PROG : LEAN_CONS;
+      const n = mk('span', '', l.title), v = mk('span', 'v', fmtPts(r[l.race])), q = mk('span', 'p', 'pts');
+      if (vr && l.race === vr.race) { n.style.fontWeight = '600'; v.style.fontWeight = '600'; }
+      grid.append(sw, n, v, q);
+    });
+    tip.appendChild(grid);
+    placeTip(mapBox, tip, event, String(r.precinct));
+  });
+  const w = mk('span'); const ramp = mk('i', 'opx-ramp');
+  ramp.style.background = `linear-gradient(90deg, ${fill(-maxAbs)}, ${fill(0)}, ${fill(maxAbs)})`;
+  w.append('More conservative ' + fmtV(-maxAbs), ramp, fmtV(maxAbs) + ' More progressive'); legend.appendChild(w);
+
+  // Table
+  document.getElementById('table-title').textContent = 'Lean by precinct';
+  document.getElementById('table-note').textContent = 'Index, then each race’s lean in points above (+) or below (−) the average precinct. Select a column heading to sort.';
+  const table = document.querySelector('.opx-table');
+  table.dataset.source = 'lean';
+  const head = table.querySelector('thead tr'), tb = table.querySelector('tbody');
+  head.replaceChildren(); tb.replaceChildren();
+  const cols = [{ k: 'precinct', label: 'Precinct' }, { k: 'index', label: 'Index' }].concat(lr.map((l) => ({ k: l.race, label: l.label })));
+  const sortRows = tableHeader(head, cols, () => drawLean(race));
+  sortRows(rows).forEach((r) => {
+    const tr = mk('tr'); tr.dataset.key = String(r.precinct);
+    cols.forEach((c) => {
+      const td = mk('td', c.k === 'index' ? 'win' : '', c.k === 'precinct' ? String(r.precinct) : c.k === 'index' ? fmtIndex(r.index) : fmtPts(r[c.k]));
+      if (c.k !== 'precinct') td.style.color = r[c.k] > 0 ? 'var(--lean-prog-text)' : r[c.k] < 0 ? 'var(--lean-cons-text)' : '';
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+}
+
 dash.onData(() => {
   const race = currentRace();
+  drawNav(race);
+  if (race.composite) { drawLean(race); return; }
   const cands = candidatesFor(race);
   drawHeader(race);
   drawTiles(race);

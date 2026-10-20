@@ -1,11 +1,13 @@
 """Extract precinct-level results from the Cook County Clerk spreadsheets in
-data/source/ into data/<race>.json, then rebuild js/data.js for the page.
+data/source/ into data/<race>.json, compute the progressive-conservative lean
+index into data/lean.json, then rebuild js/data.js for the page.
 
 Usage: python3 scripts/extract_results.py
 """
 
 import json
 import re
+import statistics
 import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -35,6 +37,25 @@ RACES = {
     "countyboard1_2024": "2024-Primary-OP-stamps-ElectionResults.xlsx",
     "trustee_2023": "2023-OP-Trustees-ElectionResults.xlsx",
     "d200_2023": "2023-OP-d200-ElectionResults.xlsx",
+}
+
+# Candidates that define the progressive-conservative lean index, by race.
+# Names must match the spreadsheet column headers exactly. The 2026 assessor
+# race (Kaegi vs. Hynes) is left out: its precinct pattern barely tracked
+# the other races (correlation 0.06 with the rest of the index).
+LEAN = {
+    "trustee_2023": {"progressive": ["Brian D. Straw", "Susan Buchanan"], "conservative": ["James Taglia", "Simone M. Boutet"]},
+    "d200_2023": {"progressive": ["Jonathan Livingston"], "conservative": ["Brian Souders"]},
+    "congress7_2024": {"progressive": ["Kina Collins"], "conservative": []},
+    "statesattorney_2024": {"progressive": ["Clayton Harris III"], "conservative": ["Eileen O'Neill Burke"]},
+    "countyboard1_2024": {"progressive": ["Tara Stamps"], "conservative": []},
+    "trustee_2025": {"progressive": ["Chibuike Enyia", "Jenna Leving Jacobson"], "conservative": ["James Taglia"]},
+    "library_2025": {"progressive": ["Annie K. Wilkinson", "Colin Bird-Martinez"], "conservative": []},
+    "president_2025": {"progressive": [], "conservative": ["Ravi Parakkat"]},
+    "d97_2025": {"progressive": ["Becky Perez"], "conservative": []},
+    "d200_2025": {"progressive": [], "conservative": ["Joshua Gertz", "Nathan R. Mellman"]},
+    "congress7_2026": {"progressive": ["Kina Collins"], "conservative": []},
+    "senate_2026": {"progressive": ["Robin Kelly"], "conservative": ["Raja Krishnamoorthi"]},
 }
 
 NS = {
@@ -121,6 +142,41 @@ def extract(path):
     return sorted(results, key=lambda r: r["precinct"])
 
 
+def lean_index(datasets):
+    """Score each current precinct on how progressive or conservative it votes.
+
+    For each race in LEAN, a precinct's lean is the progressive candidates'
+    share of the race's votes minus the conservative candidates' share. That
+    is measured against the average Oak Park precinct and divided by the
+    spread across precincts, so every race counts equally. The index is the
+    average over races: above 0 leans progressive, below 0 conservative.
+    """
+    to_current = {b["precinct_2023"]: b["precinct"] for b in datasets["boundaries"]}
+    rows = {b["precinct"]: {"precinct": b["precinct"]} for b in datasets["boundaries"]}
+    scores = {p: [] for p in rows}
+    races = []
+    for race, sides in LEAN.items():
+        results = datasets[race]
+        for name in sides["progressive"] + sides["conservative"]:
+            assert name in results[0], f"{race}: no candidate named {name!r}"
+        lean = {}
+        for r in results:
+            # 2023 results use the 2023 precinct numbers
+            p = to_current[r["precinct"]] if race.endswith("_2023") else r["precinct"]
+            net = sum(r[c] for c in sides["progressive"]) - sum(r[c] for c in sides["conservative"])
+            lean[p] = net / r["total_votes"]
+        mean, sd = statistics.mean(lean.values()), statistics.pstdev(lean.values())
+        for p, v in lean.items():
+            # Points above or below the average precinct, for display
+            rows[p][race] = round((v - mean) * 100, 1)
+            scores[p].append((v - mean) / sd)
+        races.append({"race": race, **sides, "average_lean_pct": round(mean * 100, 1)})
+    for p, row in rows.items():
+        row["index"] = round(statistics.mean(scores[p]), 2)
+        row["races"] = len(scores[p])
+    return sorted(rows.values(), key=lambda r: r["precinct"]), races
+
+
 def main():
     datasets = {"boundaries": json.loads((ROOT / "data" / "precinct_boundaries.json").read_text())}
     for race, fname in RACES.items():
@@ -128,6 +184,11 @@ def main():
         (ROOT / "data" / f"{race}.json").write_text(json.dumps(results, ensure_ascii=False, separators=(",", ":")))
         datasets[race] = results
         print(f"{race}: {len(results)} precincts from {fname}")
+    lean, lean_races = lean_index(datasets)
+    (ROOT / "data" / "lean.json").write_text(json.dumps(lean, ensure_ascii=False, separators=(",", ":")))
+    (ROOT / "data" / "lean_races.json").write_text(json.dumps(lean_races, ensure_ascii=False, indent=2) + "\n")
+    datasets["lean"], datasets["lean_races"] = lean, lean_races
+    print(f"lean: index for {len(lean)} precincts from {len(lean_races)} races")
     js = "window.OPX_DATASETS = " + json.dumps(datasets, ensure_ascii=False, separators=(",", ":")) + ";\n"
     (ROOT / "js" / "data.js").write_text(js)
     print("wrote js/data.js")
