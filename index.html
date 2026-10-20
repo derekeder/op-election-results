@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Precinct-level results for the 2023 and 2025 Village of Oak Park trustee races and the 2025 village president race.">
+<meta name="description" content="Precinct-level results for Oak Park races in the 2026 Democratic primary and the 2023 and 2025 consolidated elections.">
 <title>Oak Park Election Results by Precinct</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="js/d3.v7.9.0.min.js"></script>
@@ -13,7 +13,10 @@
 <body>
 <div id="dash-root">
 <div class="opx">
-  <nav class="opx-races" id="races" role="group" aria-label="Election"></nav>
+  <nav class="opx-nav" aria-label="Elections">
+    <div class="opx-years" id="years" role="group" aria-label="Election year"></div>
+    <div class="opx-races" id="races" role="group" aria-label="Race"></div>
+  </nav>
   <header class="opx-head" id="summary">
     <h1 id="race-title">Oak Park election results by precinct</h1>
     <p class="opx-sub"><span id="race-sub"></span> · <span id="ov-ballots" class="dash-skeleton">—</span> ballots cast, <span id="ov-turnout" class="dash-skeleton">—</span> turnout</p>
@@ -37,7 +40,7 @@
       <table class="opx-table" data-row-key="precinct"><thead><tr></tr></thead><tbody></tbody></table>
     </div>
   </section>
-  <p class="opx-foot">Sources: Cook County Clerk precinct results for the April 4, 2023 and April 1, 2025 consolidated elections; precinct boundaries from the suburban Cook County precinct map (current lines, which match the lines used in 2023 under different numbers).</p>
+  <p class="opx-foot">Sources: Cook County Clerk precinct results for the April 4, 2023 and April 1, 2025 consolidated elections and the March 17, 2026 Democratic primary; precinct boundaries from the suburban Cook County precinct map (current lines, which match the lines used in 2023 under different numbers).</p>
 </div>
 
 <script src="js/app.js"></script>

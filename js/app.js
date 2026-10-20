@@ -1,13 +1,27 @@
+const ELECTIONS = { '2026': '2026 Democratic primary', '2025': '2025 election', '2023': '2023 election' };
+
 const RACES = [
-  { id: 'trustee_2025', tab: '2025 Trustee', office: 'Village of Oak Park trustee', date: 'April 1, 2025 consolidated election', voteFor: 3, map: true },
-  { id: 'president_2025', tab: '2025 Village President', office: 'Village of Oak Park president', date: 'April 1, 2025 consolidated election', voteFor: 1, map: true },
-  { id: 'trustee_2023', tab: '2023 Trustee', office: 'Village of Oak Park trustee', date: 'April 4, 2023 consolidated election', voteFor: 3, map: true, join: 'precinct_2023' },
+  { id: 'senate_2026', year: '2026', tab: 'U.S. Senate', office: 'U.S. senator', noun: 'U.S. Senate', date: 'March 17, 2026 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
+  { id: 'comptroller_2026', year: '2026', tab: 'Comptroller', office: 'Illinois comptroller', noun: 'comptroller', date: 'March 17, 2026 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
+  { id: 'congress7_2026', year: '2026', tab: '7th Congressional', office: 'U.S. representative, 7th District', noun: 'U.S. representative', date: 'March 17, 2026 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
+  { id: 'staterep8_2026', year: '2026', tab: '8th State House', office: 'Illinois state representative, 8th District', noun: 'state representative', date: 'March 17, 2026 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
+  { id: 'countypres_2026', year: '2026', tab: 'County Board President', office: 'Cook County Board president', noun: 'County Board president', date: 'March 17, 2026 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
+  { id: 'assessor_2026', year: '2026', tab: 'County Assessor', office: 'Cook County assessor', noun: 'assessor', date: 'March 17, 2026 Democratic primary', voteFor: 1, map: true, scope: 'Oak Park precincts only' },
+  { id: 'statecentral_2026', year: '2026', tab: 'State Central Committee', office: 'Democratic State Central Committeeperson, 7th District', noun: 'State Central Committee', date: 'March 17, 2026 Democratic primary', voteFor: 2, map: true, scope: 'Oak Park precincts only' },
+  { id: 'trustee_2025', year: '2025', tab: 'Trustee', office: 'Village of Oak Park trustee', noun: 'trustee', date: 'April 1, 2025 consolidated election', voteFor: 3, map: true },
+  { id: 'president_2025', year: '2025', tab: 'Village President', office: 'Village of Oak Park president', noun: 'village president', date: 'April 1, 2025 consolidated election', voteFor: 1, map: true },
+  { id: 'library_2025', year: '2025', tab: 'Library Board', office: 'Oak Park Public Library trustee', noun: 'library trustee', date: 'April 1, 2025 consolidated election', voteFor: 4, map: true },
+  { id: 'd97_2025', year: '2025', tab: 'District 97', office: 'Oak Park Elementary School District 97 board', noun: 'District 97 board', date: 'April 1, 2025 consolidated election', voteFor: 3, map: true },
+  { id: 'd200_2025', year: '2025', tab: 'District 200', office: 'Oak Park and River Forest High School District 200 board', noun: 'District 200 board', date: 'April 1, 2025 consolidated election', voteFor: 4, map: true, scope: 'Oak Park precincts only; the district also includes River Forest' },
+  { id: 'triton_2025', year: '2025', tab: 'Triton College', office: 'Triton College trustee', noun: 'Triton College trustee', date: 'April 1, 2025 consolidated election', voteFor: 3, map: true, scope: 'Oak Park precincts only; the college district covers much of western Cook County' },
+  { id: 'trustee_2023', year: '2023', tab: 'Trustee', office: 'Village of Oak Park trustee', noun: 'trustee', date: 'April 4, 2023 consolidated election', voteFor: 3, map: true, join: 'precinct_2023' },
+  { id: 'd200_2023', year: '2023', tab: 'District 200', office: 'Oak Park and River Forest High School District 200 board', noun: 'District 200 board', date: 'April 4, 2023 consolidated election', voteFor: 3, map: true, join: 'precinct_2023', scope: 'Oak Park precincts only; the district also includes River Forest' },
 ];
 
 RACES.forEach((race) => {
   dash.calc('totals_' + race.id, {
     inputs: [race.id],
-    title: race.tab + ' totals',
+    title: race.year + ' ' + race.tab + ' totals',
     description: 'Each candidate’s votes summed over all precincts, and their share of all votes cast in the race.',
     fn: (results) => {
       const fixed = new Set(['precinct', 'registered_voters', 'ballots_cast', 'turnout_pct', 'total_votes', 'top_candidate']);
@@ -21,7 +35,7 @@ RACES.forEach((race) => {
   });
   dash.calc('leaders_' + race.id, {
     inputs: [race.id],
-    title: race.tab + ' precincts led',
+    title: race.year + ' ' + race.tab + ' precincts led',
     description: 'How many precincts each candidate got the most votes in (ties counted separately).',
     fn: (results) => {
       const n = {};
@@ -31,7 +45,7 @@ RACES.forEach((race) => {
   });
   dash.calc('overall_' + race.id, {
     inputs: [race.id],
-    title: race.tab + ' turnout',
+    title: race.year + ' ' + race.tab + ' turnout',
     description: 'Ballots cast over registered voters, summed over all precincts.',
     fn: (results) => {
       const registered = results.reduce((s, r) => s + Number(r.registered_voters), 0);
@@ -46,18 +60,33 @@ const fmt = d3.format(',');
 const pct = d3.format('.1%');
 const root = document.querySelector('.opx');
 const resolve = (c) => { const el = document.createElement('span'); el.style.color = c; root.appendChild(el); const v = getComputedStyle(el).color; el.remove(); return v; };
-const candColor = (i) => dash.colors[i % dash.colors.length];
-const lastName = (n) => n.replace(/\s+[A-Z]\.\s+/, ' ').split(' ').slice(1).join(' ') || n;
+// Distinct colors for the top 7 vote-getters; anyone further down is gray
+const candColor = (i) => dash.colors[Math.min(i, dash.colors.length - 1)];
+const SHORT_NAMES = { 'La Shawn K. Ford': 'Ford' };
+const lastName = (n) => SHORT_NAMES[n] || n.replace(/\s*"[^"]*"/g, '').replace(/\s+[A-Z]\.?(?=\s)/g, '').split(' ').slice(1).join(' ') || n;
 const geomOf = (g) => (typeof g === 'string' ? JSON.parse(g) : g);
 const polysOf = (g) => (g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : []);
 const currentRace = () => RACES.find((r) => r.id === dash.params().race) || RACES[0];
 const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
 
-// Race tabs
+// Election year tabs, then a tab for each race in the selected year
+const yearsEl = document.getElementById('years');
 const racesEl = document.getElementById('races');
+const kindOf = (r) => r.id.replace(/_\d{4}$/, '');
+const selectRace = (r) => { window.opx.sortKey = 'precinct'; window.opx.sortDir = 1; dash.setParams({ race: r.id, view: 'leader' }); dash.setLink('summary'); };
+[...new Set(RACES.map((r) => r.year))].forEach((year) => {
+  const b = mk('button', '', ELECTIONS[year] || year + ' election'); b.type = 'button'; b.dataset.year = year;
+  b.addEventListener('click', () => {
+    const cur = currentRace();
+    if (cur.year === year) return;
+    // Stay on the same office if it was on the ballot that year
+    selectRace(RACES.find((r) => r.year === year && kindOf(r) === kindOf(cur)) || RACES.find((r) => r.year === year));
+  });
+  yearsEl.appendChild(b);
+});
 RACES.forEach((r) => {
-  const b = mk('button', '', r.tab); b.type = 'button'; b.dataset.race = r.id;
-  b.addEventListener('click', () => { window.opx.sortKey = 'precinct'; window.opx.sortDir = 1; dash.setParams({ race: r.id, view: 'leader' }); dash.setLink('summary'); });
+  const b = mk('button', '', r.tab); b.type = 'button'; b.dataset.race = r.id; b.dataset.year = r.year;
+  b.addEventListener('click', () => selectRace(r));
   racesEl.appendChild(b);
 });
 
@@ -67,9 +96,10 @@ function candidatesFor(race) {
 }
 
 function drawHeader(race) {
-  racesEl.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.race === race.id)));
-  document.getElementById('race-title').textContent = race.tab + ' results by precinct';
-  document.getElementById('race-sub').textContent = race.date + ' · ' + race.office + ', vote for ' + race.voteFor;
+  yearsEl.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.year === race.year)));
+  racesEl.querySelectorAll('button').forEach((b) => { b.hidden = b.dataset.year !== race.year; b.setAttribute('aria-pressed', String(b.dataset.race === race.id)); });
+  document.getElementById('race-title').textContent = race.year + ' ' + race.tab + ' results by precinct';
+  document.getElementById('race-sub').textContent = race.date + ' · ' + race.office + ', vote for ' + race.voteFor + (race.scope ? ' · ' + race.scope : '');
   const o = dash.data('overall_' + race.id);
   const b = document.getElementById('ov-ballots'), t = document.getElementById('ov-turnout');
   [b, t].forEach((el) => { el.dataset.source = 'overall_' + race.id; el.dataset.field = el === b ? 'ballots_cast' : 'turnout'; });
@@ -147,13 +177,15 @@ function drawMap(race, cands) {
 
   document.getElementById('map-title').textContent = vc ? vc.name + '’s share of votes by precinct' : (race.voteFor === 1 ? 'Winner in each precinct' : 'Leading candidate in each precinct');
   document.getElementById('map-note').textContent = vc
-    ? (race.voteFor === 1 ? 'Share of votes cast for village president in each precinct.' : 'Share of all trustee votes cast in each precinct (each voter could pick up to 3).') + ' Hover a precinct for its full results.'
+    ? (race.voteFor === 1 ? 'Share of votes cast for ' + race.noun + ' in each precinct.' : 'Share of all ' + race.noun + ' votes cast in each precinct (each voter could pick up to ' + race.voteFor + ').') + ' Hover a precinct for its full results.'
     : 'Colored by the candidate with the most votes. Darker shading means a wider lead over second place; gray means a tie. Hover a precinct for its full results.';
   if (race.join) document.getElementById('map-note').textContent += ' Labels use 2023 precinct numbers; the lines are the same as today, renumbered in 2024.';
+  if (d.data.length < bd.data.length) document.getElementById('map-note').textContent += ' Only ' + d.data.length + ' Oak Park precincts are in this district; the rest are left blank.';
 
   const ranked = (r) => cands.map((c) => ({ ...c, votes: Number(r[c.name]), share: Number(r[c.name]) / Number(r.total_votes) })).sort((a, b) => b.votes - a.votes);
   const jk = race.join || 'precinct';
-  const shapes = bd.data.map((b) => ({ key: String(b[jk]), r: byP.get(String(b[jk])), polys: polysOf(geomOf(b.geometry)) })).filter((s) => s.r);
+  const shapes = bd.data.map((b) => ({ key: String(b[jk]), r: byP.get(String(b[jk])), polys: polysOf(geomOf(b.geometry)) }));
+  const inShapes = shapes.filter((sh) => sh.r);
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   shapes.forEach((s) => s.polys.forEach((poly) => poly.forEach((ring) => ring.forEach(([x, y]) => { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }))));
   const k = Math.cos(((minY + maxY) / 2) * Math.PI / 180);
@@ -166,16 +198,17 @@ function drawMap(race, cands) {
   box.style.minHeight = H + 'px';
 
   const bg = resolve('var(--color-bg)'), fg = resolve('var(--color-fg)');
+  const outside = resolve('var(--color-panel)'), edge = resolve('var(--color-border-line)'), muted = resolve('var(--color-fg-muted)');
   const colors = cands.map((c) => resolve(candColor(c.i)));
   let fillOf, ext;
   if (vc) {
-    ext = d3.extent(shapes, (sh) => Number(sh.r[vc.name]) / Number(sh.r.total_votes));
+    ext = d3.extent(inShapes, (sh) => Number(sh.r[vc.name]) / Number(sh.r.total_votes));
     const lo = d3.interpolateRgb(bg, colors[vc.i])(0.12);
     const ramp = d3.interpolateRgb(lo, colors[vc.i]);
     fillOf = (r) => ramp((Number(r[vc.name]) / Number(r.total_votes) - ext[0]) / ((ext[1] - ext[0]) || 1));
   } else {
     const margin = (r) => { const x = ranked(r); return (x[0].votes - x[1].votes) / Number(r.total_votes); };
-    ext = d3.extent(shapes, (sh) => margin(sh.r));
+    ext = d3.extent(inShapes, (sh) => margin(sh.r));
     fillOf = (r) => { const x = ranked(r); if (x[0].votes === x[1].votes) return resolve('var(--color-border-line)'); const t = 0.35 + 0.65 * ((margin(r) - ext[0]) / ((ext[1] - ext[0]) || 1)); return d3.interpolateRgb(bg, colors[x[0].i])(t); };
   }
 
@@ -193,7 +226,8 @@ function drawMap(race, cands) {
   });
   svg.append('g').selectAll('path').data(shapes).join('path')
     .attr('class', 'opx-pct').attr('d', (sh) => sh.path).attr('fill-rule', 'evenodd')
-    .attr('fill', (sh) => fillOf(sh.r)).attr('stroke', bg).attr('stroke-width', 1.2)
+    .attr('fill', (sh) => (sh.r ? fillOf(sh.r) : outside)).attr('stroke', (sh) => (sh.r ? bg : edge)).attr('stroke-width', 1.2)
+    .style('pointer-events', (sh) => (sh.r ? null : 'none'))
     .on('mouseenter', (event) => { d3.select(event.currentTarget).raise().attr('stroke', fg).attr('stroke-width', 2); })
     .on('mousemove', (event, sh) => showTip(event, sh.r))
     .on('mouseleave', (event) => { d3.select(event.currentTarget).attr('stroke', bg).attr('stroke-width', 1.2); tip.hidden = true; highlight(null); });
@@ -201,7 +235,7 @@ function drawMap(race, cands) {
   svg.append('g').attr('pointer-events', 'none').selectAll('text').data(shapes.filter((sh) => sh.c)).join('text')
     .attr('x', (sh) => sh.c[0]).attr('y', (sh) => sh.c[1]).attr('dy', '0.35em').attr('text-anchor', 'middle')
     .attr('font-size', fs).attr('font-family', 'var(--font-anthropic-sans)')
-    .attr('fill', fg).attr('stroke', bg).attr('stroke-width', 2.5).attr('paint-order', 'stroke').attr('stroke-linejoin', 'round')
+    .attr('fill', (sh) => (sh.r ? fg : muted)).attr('stroke', bg).attr('stroke-width', 2.5).attr('paint-order', 'stroke').attr('stroke-linejoin', 'round')
     .text((sh) => sh.key);
 
   function showTip(event, r) {
@@ -228,7 +262,7 @@ function drawMap(race, cands) {
     ramp.style.background = `linear-gradient(90deg, ${d3.interpolateRgb(bg, colors[vc.i])(0.12)}, ${colors[vc.i]})`;
     w.append(pct(ext[0]), ramp, pct(ext[1])); legend.appendChild(w);
   } else {
-    const led = new Set(shapes.map((sh) => ranked(sh.r)[0].name));
+    const led = new Set(inShapes.map((sh) => ranked(sh.r)[0].name));
     cands.forEach((c) => { if (!led.has(c.name)) return; const sp = mk('span'); const sw = mk('i', 'opx-sw'); sw.style.background = colors[c.i]; sp.append(sw, c.name); legend.appendChild(sp); });
     if (led.size < cands.length) legend.appendChild(mk('span', '', 'Others led no precincts'));
   }
