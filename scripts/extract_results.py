@@ -156,6 +156,7 @@ def lean_index(datasets):
     the averages of all three groups (moderates count as 0, pulling the score
     toward the center). abs_lean_pts averages that over those races; h2h_won
     counts the races where the progressive side outpolled the conservative.
+    Each race also gets <race>_abs, its absolute lean.
     """
     to_current = {b["precinct_2023"]: b["precinct"] for b in datasets["boundaries"]}
     rows = {b["precinct"]: {"precinct": b["precinct"]} for b in datasets["boundaries"]}
@@ -178,6 +179,7 @@ def lean_index(datasets):
                 cons = statistics.mean(r[c] for c in sides["conservative"])
                 mod = statistics.mean(r[c] for c in sides["moderate"]) if sides["moderate"] else 0
                 h2h[p].append((prog - cons) / (prog + mod + cons))
+                rows[p][race + "_abs"] = round((prog - cons) / (prog + mod + cons) * 100, 1)
         mean, sd = statistics.mean(lean.values()), statistics.pstdev(lean.values())
         for p, v in lean.items():
             # Points above or below the average precinct, for display

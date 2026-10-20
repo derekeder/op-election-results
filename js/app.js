@@ -371,6 +371,7 @@ function drawTable(race, cands) {
 // Composite progressive–conservative lean (computed by scripts/extract_results.py)
 const signed = (f) => { const g = d3.format(f); return (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + g(Math.abs(v)); };
 const fmtIndex = signed('.2f'), fmtPts = signed('.1f');
+const fmtLean = (v) => fmtPts(v) + '%';
 const LEAN_PROG = 'var(--c1)', LEAN_CONS = 'var(--c2)';
 function leanRaces() {
   const d = dash.data('lean_races');
@@ -404,12 +405,15 @@ function drawLean(race) {
   const box = document.getElementById('totals');
   box.replaceChildren();
   const tile = (color, name, num, sub) => { const t = mk('div', 'opx-tile'); const n = mk('div', 'opx-tile-name'); if (color) { const sw = mk('i', 'opx-sw'); sw.style.background = color; n.append(sw); } n.append(name); t.append(n, mk('div', 'opx-tile-num', num), mk('div', 'opx-tile-share', sub)); box.appendChild(t); };
-  const top3 = byIndex.slice(0, 3), bot3 = byIndex.slice(-3).reverse();
-  tile(LEAN_PROG, 'Most progressive precincts', top3.map((r) => r.precinct).join(', '), 'Index ' + top3.map((r) => fmtIndex(r.index)).join(', '));
-  tile(LEAN_CONS, 'Most conservative precincts', bot3.map((r) => r.precinct).join(', '), 'Index ' + bot3.map((r) => fmtIndex(r.index)).join(', '));
-  const h2hN = lr.filter((l) => l.head_to_head).length;
-  tile(null, 'Precincts favoring progressives', rows.filter((r) => r.abs_lean_pts > 0).length + ' of ' + rows.length, 'Absolute lean above 0 across ' + h2hN + ' races');
-  tile(null, 'Races in the index', String(lr.length), 'Local races from the ' + [...new Set(lr.map((l) => l.title.slice(0, 4)))].join(' and ') + ' elections, weighted equally');
+  const byLean = rows.slice().sort((a, b) => b.abs_lean_pts - a.abs_lean_pts);
+  const top3 = byLean.slice(0, 3), bot3 = byLean.slice(-3).reverse();
+  tile(LEAN_PROG, 'Most progressive precincts', top3.map((r) => r.precinct).join(', '), 'Lean ' + top3.map((r) => fmtLean(r.abs_lean_pts)).join(', '));
+  tile(LEAN_CONS, 'Most conservative precincts', bot3.map((r) => r.precinct).join(', '), 'Lean ' + bot3.map((r) => fmtLean(r.abs_lean_pts)).join(', '));
+  const races = mk('div', 'opx-tile'); const list = mk('ul', 'opx-tile-list');
+  d3.groups(lr, (l) => l.title.slice(0, 4)).forEach(([year, ls]) => {
+    const li = mk('li'); li.append(mk('strong', '', year + ': '), ls.map((l) => l.title.slice(5)).join(', ')); list.appendChild(li);
+  });
+  races.append(mk('div', 'opx-tile-name', 'Competitive local races in the index'), list); box.appendChild(races);
 
   // Map
   const mapBox = document.querySelector('.opx-mapbox'), tip = mapBox.querySelector('.opx-tip'), legend = document.getElementById('map-legend');
@@ -427,36 +431,37 @@ function drawLean(race) {
   const shapes = bd.data.map((b) => ({ key: String(b.precinct), r: byP.get(String(b.precinct)), polys: polysOf(geomOf(b.geometry)) }));
   drawPrecincts(mapBox, shapes, (r) => fill(r.abs_lean_pts), (event, r) => {
     tip.replaceChildren();
-    tip.appendChild(mk('div', 'opx-tip-h', 'Precinct ' + r.precinct + ' · absolute lean ' + fmtPts(r.abs_lean_pts) + ' · progressives won ' + r.h2h_won + ' of ' + r.h2h_races + ' races'));
-    tip.appendChild(mk('div', 'opx-tip-sub', 'Index ' + fmtIndex(r.index) + ' · each race’s lean vs. the average precinct:'));
-    const grid = mk('div', 'opx-tip-r');
+    tip.appendChild(mk('div', 'opx-tip-title', 'Precinct ' + r.precinct));
+    // The precinct's overall lean, then each race's
+    const grid = mk('div', 'opx-tip-t');
+    const swAll = mk('i', 'opx-sw'); swAll.style.background = r.abs_lean_pts >= 0 ? LEAN_PROG : LEAN_CONS;
+    grid.append(swAll, mk('strong', '', 'Progressive lean'), mk('strong', 'v', fmtLean(r.abs_lean_pts)));
     lr.forEach((l) => {
-      const sw = mk('i', 'opx-sw'); sw.style.background = r[l.race] >= 0 ? LEAN_PROG : LEAN_CONS;
-      const n = mk('span', '', l.title), v = mk('span', 'v', fmtPts(r[l.race])), q = mk('span', 'p', 'pts');
-      grid.append(sw, n, v, q);
+      const sw = mk('i', 'opx-sw'); sw.style.background = r[l.race + '_abs'] >= 0 ? LEAN_PROG : LEAN_CONS;
+      grid.append(sw, mk('span', '', l.title), mk('span', 'v', fmtLean(r[l.race + '_abs'])));
     });
     tip.appendChild(grid);
     placeTip(mapBox, tip, event, String(r.precinct));
   });
   const w = mk('span'); const ramp = mk('i', 'opx-ramp');
   ramp.style.background = `linear-gradient(90deg, ${fill(-maxAbs)}, ${fill(0)}, ${fill(maxAbs)})`;
-  w.append('Conservative ' + fmtPts(-maxAbs), ramp, fmtPts(maxAbs) + ' Progressive'); legend.appendChild(w);
-  legend.appendChild(mk('span', '', 'Scale runs from −100 (all conservative) to +100 (all progressive); 0 is a tie'));
+  w.append('Conservative ' + fmtLean(-maxAbs), ramp, fmtLean(maxAbs) + ' Progressive'); legend.appendChild(w);
+  legend.appendChild(mk('span', '', 'Scale runs from −100% (all conservative) to +100% (all progressive); 0 is a tie'));
 
   // Table
   document.getElementById('table-title').textContent = 'Lean by precinct';
-  document.getElementById('table-note').textContent = 'Index (relative to the average precinct); races where the average progressive candidate outpolled the average conservative one; absolute lean (−100 to +100, 0 is a tie); then each race’s lean in points above (+) or below (−) the average precinct. Select a column heading to sort.';
+  document.getElementById('table-note').textContent = 'Lean runs from −100% (all conservative) to +100% (all progressive), with 0 a tie. Shown for each precinct overall and for each race, with how many races the average progressive candidate outpolled the average conservative one. Select a column heading to sort.';
   const table = document.querySelector('.opx-table');
   table.dataset.source = 'lean';
   const head = table.querySelector('thead tr'), tb = table.querySelector('tbody');
   head.replaceChildren(); tb.replaceChildren();
-  const cols = [{ k: 'precinct', label: 'Precinct' }, { k: 'index', label: 'Index' }, { k: 'h2h_won', label: 'Races won' }, { k: 'abs_lean_pts', label: 'Absolute lean' }].concat(lr.map((l) => ({ k: l.race, label: l.label })));
+  const cols = [{ k: 'precinct', label: 'Precinct' }, { k: 'abs_lean_pts', label: 'Lean' }, { k: 'h2h_won', label: 'Races won' }].concat(lr.map((l) => ({ k: l.race + '_abs', label: l.label })));
   const sortRows = tableHeader(head, cols, () => drawLean(race));
   sortRows(rows).forEach((r) => {
     const tr = mk('tr'); tr.dataset.key = String(r.precinct);
     cols.forEach((c) => {
-      const text = c.k === 'precinct' ? String(r.precinct) : c.k === 'index' ? fmtIndex(r.index) : c.k === 'h2h_won' ? r.h2h_won + ' of ' + r.h2h_races : fmtPts(r[c.k]);
-      const td = mk('td', c.k === 'index' ? 'win' : '', text);
+      const text = c.k === 'precinct' ? String(r.precinct) : c.k === 'h2h_won' ? r.h2h_won + ' of ' + r.h2h_races : fmtLean(r[c.k]);
+      const td = mk('td', c.k === 'abs_lean_pts' ? 'win' : '', text);
       // Positive = progressive; head-to-head columns are centered on a tie
       const v = c.k === 'h2h_won' ? r.h2h_won - r.h2h_races / 2 : r[c.k];
       if (c.k !== 'precinct') td.style.color = v > 0 ? 'var(--lean-prog-text)' : v < 0 ? 'var(--lean-cons-text)' : '';
