@@ -40,15 +40,14 @@ RACES = {
 }
 
 # Candidates that define the progressive-conservative lean index, by race.
-# Names must match the spreadsheet column headers exactly. The 2026 assessor
-# race (Kaegi vs. Hynes) is left out: its precinct pattern barely tracked
-# the other races (correlation 0.06 with the rest of the index).
+# Names must match the spreadsheet column headers exactly. Left out because
+# their precinct patterns barely tracked the other races: 2026 assessor
+# (Kaegi vs. Hynes), 2024 County Board 1st District (Stamps) and 2023
+# District 200 (Livingston vs. Souders).
 LEAN = {
     "trustee_2023": {"progressive": ["Brian D. Straw", "Susan Buchanan"], "conservative": ["James Taglia", "Simone M. Boutet"]},
-    "d200_2023": {"progressive": ["Jonathan Livingston"], "conservative": ["Brian Souders"]},
     "congress7_2024": {"progressive": ["Kina Collins"], "conservative": []},
     "statesattorney_2024": {"progressive": ["Clayton Harris III"], "conservative": ["Eileen O'Neill Burke"]},
-    "countyboard1_2024": {"progressive": ["Tara Stamps"], "conservative": []},
     "trustee_2025": {"progressive": ["Chibuike Enyia", "Jenna Leving Jacobson"], "conservative": ["James Taglia"]},
     "library_2025": {"progressive": ["Annie K. Wilkinson", "Colin Bird-Martinez"], "conservative": []},
     "president_2025": {"progressive": [], "conservative": ["Ravi Parakkat"]},

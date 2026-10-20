@@ -67,4 +67,4 @@ The **Progressive–conservative lean** view scores each precinct on how progres
 
 For each race, a precinct's lean is the progressive candidates' share of the vote minus the conservative candidates' share. That is measured against the average Oak Park precinct and divided by the spread across precincts, so every race counts equally regardless of how close it was. The index is the average over the races: above 0 leans more progressive than the average precinct, below 0 more conservative. Because Oak Park as a whole votes progressive, the index is relative: a "conservative" precinct is conservative for Oak Park.
 
-The 2026 assessor race (Kaegi vs. Hynes) is left out because its precinct pattern barely tracked the other races.
+Three races are left out because their precinct patterns barely tracked the other races: the 2026 assessor race (Kaegi vs. Hynes), the 2024 County Board 1st District race (Stamps) and the 2023 District 200 race (Livingston vs. Souders).
