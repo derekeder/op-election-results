@@ -219,6 +219,10 @@ def main():
     (ROOT / "data" / "lean.json").write_text(json.dumps(lean, ensure_ascii=False, separators=(",", ":")))
     (ROOT / "data" / "lean_races.json").write_text(json.dumps(lean_races, ensure_ascii=False, indent=2) + "\n")
     datasets["lean"], datasets["lean_races"] = lean, lean_races
+    # Precinct demographics come from scripts/demographics.py, which needs a Census API key
+    demographics = ROOT / "data" / "demographics.json"
+    if demographics.exists():
+        datasets["demographics"] = json.loads(demographics.read_text())
     print(f"lean: index for {len(lean)} precincts from {len(lean_races)} races")
     js = "window.OPX_DATASETS = " + json.dumps(datasets, ensure_ascii=False, separators=(",", ":")) + ";\n"
     (ROOT / "js" / "data.js").write_text(js)

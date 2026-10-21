@@ -4,6 +4,7 @@ const ELECTIONS = {
   2024: "2024 Democratic primary",
   2023: "2023 election",
   composite: "Progressive lean",
+  demographics: "Demographics",
 };
 
 const RACES = [
@@ -215,6 +216,18 @@ const RACES = [
   },
   { id: "lean", year: "composite", tab: "Composite index", composite: true },
   {
+    id: "demographics",
+    year: "demographics",
+    tab: "Race and ethnicity",
+    demographics: true,
+  },
+  { id: "age", year: "demographics", tab: "Age", demographics: true },
+  { id: "income", year: "demographics", tab: "Income", demographics: true },
+  { id: "housing", year: "demographics", tab: "Ownership", demographics: true },
+  { id: "buildings", year: "demographics", tab: "Building type", demographics: true },
+  { id: "households", year: "demographics", tab: "Household type", demographics: true },
+  { id: "household_size", year: "demographics", tab: "Household size", demographics: true },
+  {
     id: "d200_2023",
     year: "2023",
     tab: "District 200",
@@ -228,7 +241,7 @@ const RACES = [
   },
 ];
 
-RACES.filter((r) => !r.composite).forEach((race) => {
+RACES.filter((r) => !r.composite && !r.demographics).forEach((race) => {
   dash.calc("totals_" + race.id, {
     inputs: [race.id],
     title: race.year + " " + race.tab + " totals",
@@ -1151,11 +1164,398 @@ function drawLean(race) {
   });
 }
 
+// Demographics by precinct (estimated by scripts/demographics.py): one entry per Demographics tab
+const withColors = (groups) => groups.map((g, i) => ({ ...g, color: dash.colors[i] }));
+const DEMOGRAPHICS = {
+  demographics: {
+    title: "Race and ethnicity by precinct",
+    table: "B03002",
+    lead: "Oak Park is ",
+    groups: withColors([
+      { k: "white", label: "White", long: "white (not Hispanic)" },
+      { k: "black", label: "Black", long: "Black (not Hispanic)" },
+      { k: "hispanic", label: "Hispanic or Latino", long: "Hispanic or Latino" },
+      { k: "asian", label: "Asian", long: "Asian (not Hispanic)" },
+      { k: "other", label: "Other or multiracial", long: "another race or multiracial (not Hispanic)" },
+    ]),
+  },
+  age: {
+    title: "Age by precinct",
+    table: "B01001",
+    lead: "Oak Park’s residents are ",
+    groups: withColors([
+      { k: "age_under18", label: "Under 18", long: "under 18" },
+      { k: "age_18_29", label: "18–29", long: "18 to 29" },
+      { k: "age_30_44", label: "30–44", long: "30 to 44" },
+      { k: "age_45_64", label: "45–64", long: "45 to 64" },
+      { k: "age_65plus", label: "65 and older", long: "65 or older" },
+    ]),
+  },
+  housing: {
+    title: "Homeowners and renters by precinct",
+    table: "B25003",
+    lead: "Oak Park’s households are ",
+    total: "occupied_units",
+    unit: "households",
+    weight: "housing units",
+    groups: withColors([
+      { k: "owner", label: "Homeowners", long: "homeowners" },
+      { k: "renter", label: "Renters", long: "renters" },
+    ]),
+  },
+  buildings: {
+    title: "Single- and multi-unit housing by precinct",
+    table: "B25024",
+    lead: "Oak Park’s housing units are ",
+    total: "housing_units",
+    unit: "housing units",
+    that: "that",
+    weight: "housing units",
+    groups: withColors([
+      { k: "single_unit", label: "Single-unit", long: "in single-unit buildings" },
+      { k: "multi_unit", label: "Multi-unit", long: "in buildings with 2 or more units" },
+    ]),
+  },
+  households: {
+    title: "Household type by precinct",
+    table: "B11001",
+    lead: "Oak Park’s households are ",
+    total: "type_households",
+    unit: "households",
+    that: "that",
+    weight: "housing units",
+    groups: withColors([
+      { k: "married", label: "Married couple", long: "married couples" },
+      { k: "male_householder", label: "Male householder, no spouse", long: "families with a male householder and no spouse" },
+      { k: "female_householder", label: "Female householder, no spouse", long: "families with a female householder and no spouse" },
+      { k: "living_alone", label: "Living alone", long: "people living alone" },
+      { k: "other_nonfamily", label: "Other nonfamily", long: "other nonfamily households (such as roommates)" },
+    ]),
+  },
+};
+const fmtShare = (v) => d3.format(".1f")(v) + "%";
+
+function drawDemographics(race) {
+  const cfg = DEMOGRAPHICS[race.id],
+    DEMO_GROUPS = cfg.groups;
+  const d = dash.data("demographics");
+  const rows = d.status === "ok" ? d.data : [];
+  const unit = cfg.unit || "residents",
+    totalKey = cfg.total || "population";
+  const pop = d3.sum(rows, (r) => r[totalKey]);
+  const share = (g) => (pop ? (d3.sum(rows, (r) => r[g.k]) / pop) * 100 : 0);
+
+  // Header
+  document.getElementById("ov").hidden = true;
+  document.getElementById("race-title").textContent = cfg.title;
+  document.getElementById("race-sub").textContent =
+    "2020–2024 American Community Survey 5-year estimates · " +
+    fmt(pop) +
+    " " +
+    unit;
+  const take = document.getElementById("takeaway");
+  take.textContent = rows.length
+    ? cfg.lead +
+      DEMO_GROUPS.map((g) => fmtShare(share(g)) + " " + g.long).join(", ").replace(/, ([^,]*)$/, " and $1") +
+      "."
+    : "";
+
+  // Tiles: village-wide share of each group
+  const box = document.getElementById("totals");
+  box.replaceChildren();
+  DEMO_GROUPS.forEach((g) => {
+    const t = mk("div", "opx-tile");
+    const n = mk("div", "opx-tile-name");
+    const sw = mk("i", "opx-sw");
+    sw.style.background = g.color;
+    n.append(sw, g.label);
+    t.append(
+      n,
+      mk("div", "opx-tile-num", fmtShare(share(g))),
+      mk("div", "opx-tile-share", fmt(d3.sum(rows, (r) => r[g.k])) + " " + unit),
+    );
+    box.appendChild(t);
+  });
+
+  // Map: one group's share of each precinct's population
+  const mapBox = document.querySelector(".opx-mapbox"),
+    tip = mapBox.querySelector(".opx-tip"),
+    legend = document.getElementById("map-legend");
+  mapBox.querySelectorAll(".opx-fail, .opx-nomap").forEach((n) => n.remove());
+  legend.replaceChildren();
+  viewsEl.replaceChildren();
+  tip.hidden = true;
+  const bd = dash.data("boundaries");
+  if (!rows.length || bd.status !== "ok") {
+    mapBox.classList.add("dash-skeleton");
+    return;
+  }
+  mapBox.classList.remove("dash-skeleton");
+  mapBox.dataset.source = "boundaries demographics";
+  const g = DEMO_GROUPS.find((x) => x.k === dash.params().view) || DEMO_GROUPS[0];
+  DEMO_GROUPS.forEach((x) => {
+    const b = mk("button");
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(x === g));
+    const sw = mk("i", "opx-sw");
+    sw.style.background = x.color;
+    b.append(sw, x.label);
+    b.addEventListener("click", () => dash.setParams({ view: x.k }));
+    viewsEl.appendChild(b);
+  });
+  document.getElementById("map-title").textContent =
+    "Share of " + unit + " " + (cfg.that || "who") + " are " + g.long;
+  document.getElementById("map-note").textContent =
+    "Estimates from the 2020–2024 American Community Survey (Table " +
+    cfg.table +
+    "), which reports by census block group. Block groups don’t match precinct lines, so each one is split among its 2020 census blocks by " +
+    (cfg.weight || "population") +
+    " and the blocks are added up by precinct. These are estimates with margins of error, especially for smaller groups. Hover a precinct for its full breakdown.";
+  const pct = (r) => r[g.k + "_pct"];
+  const ext = d3.extent(rows, pct);
+  const bg = resolve("var(--color-bg)"),
+    color = resolve(g.color);
+  const lo = d3.interpolateRgb(bg, color)(0.08);
+  const ramp = d3.interpolateRgb(lo, color);
+  const fill = (r) => ramp((pct(r) - ext[0]) / (ext[1] - ext[0] || 1));
+  const byP = new Map(rows.map((r) => [String(r.precinct), r]));
+  const shapes = bd.data.map((b) => ({
+    key: String(b.precinct),
+    r: byP.get(String(b.precinct)),
+    polys: polysOf(geomOf(b.geometry)),
+  }));
+  drawPrecincts(mapBox, shapes, fill, (event, r) => {
+    tip.replaceChildren();
+    tip.appendChild(mk("div", "opx-tip-title", "Precinct " + r.precinct));
+    tip.appendChild(mk("div", "opx-tip-sub", fmt(r[totalKey]) + " " + unit));
+    const grid = mk("div", "opx-tip-r");
+    DEMO_GROUPS.forEach((x) => {
+      const sw = mk("i", "opx-sw");
+      sw.style.background = x.color;
+      const n = mk("span", "", x.label),
+        v = mk("span", "v", fmt(r[x.k])),
+        q = mk("span", "p", fmtShare(r[x.k + "_pct"]));
+      if (x === g) {
+        n.style.fontWeight = "600";
+        q.style.fontWeight = "600";
+      }
+      grid.append(sw, n, v, q);
+    });
+    tip.appendChild(grid);
+    placeTip(mapBox, tip, event, String(r.precinct));
+  });
+  const w = mk("span");
+  const bar = mk("i", "opx-ramp");
+  bar.style.background = `linear-gradient(90deg, ${lo}, ${color})`;
+  w.append(fmtShare(ext[0]), bar, fmtShare(ext[1]));
+  legend.appendChild(w);
+
+  // Table
+  document.getElementById("table-title").textContent = cfg.title;
+  document.getElementById("table-note").textContent =
+    "Estimated " +
+    unit +
+    " and each group’s share of the precinct’s total. Select a column heading to sort.";
+  const table = document.querySelector(".opx-table");
+  table.dataset.source = "demographics";
+  const head = table.querySelector("thead tr"),
+    tb = table.querySelector("tbody");
+  head.replaceChildren();
+  tb.replaceChildren();
+  const cols = [
+    { k: "precinct", label: "Precinct" },
+    { k: totalKey, label: unit[0].toUpperCase() + unit.slice(1) },
+  ].concat(DEMO_GROUPS.map((x) => ({ k: x.k + "_pct", label: x.label + " %" })));
+  const sortRows = tableHeader(head, cols, () => drawDemographics(race));
+  sortRows(rows).forEach((r) => {
+    const tr = mk("tr");
+    tr.dataset.key = String(r.precinct);
+    cols.forEach((c) => {
+      const text =
+        c.k === "precinct"
+          ? String(r.precinct)
+          : c.k === totalKey
+            ? fmt(r[totalKey])
+            : d3.format(".1f")(r[c.k]);
+      tr.appendChild(mk("td", c.k === g.k + "_pct" ? "win" : "", text));
+    });
+    tb.appendChild(tr);
+  });
+}
+
+// Single-number demographics by precinct (estimated by scripts/demographics.py): one entry per tab
+const fmtMoney = (r) => d3.format("$,.0f")(r.median_income) + (r.median_income_top_coded ? "+" : "");
+const listAnd = (xs) => xs.join(", ").replace(/, ([^,]*)$/, " and $1");
+const METRICS = {
+  income: {
+    key: "median_income",
+    title: "Median household income by precinct",
+    label: "Median household income",
+    high: "Highest median income",
+    low: "Lowest median income",
+    format: fmtMoney,
+    color: "var(--c3)",
+    note: "Estimates from the 2020–2024 American Community Survey (Table B19001), which counts households by income bracket for each census block group. Each block group is split among its 2020 census blocks by housing units, the blocks are added up by precinct, and the median is interpolated within the bracket holding the middle household. The top bracket is $200,000 or more, so higher medians show as $200,000+. These are estimates with margins of error. Hover a precinct for details.",
+    // Several precincts can share the top-coded $200,000+ median
+    takeaway: (sorted) => {
+      const top = sorted.filter((r) => r.median_income_top_coded),
+        low = sorted[sorted.length - 1];
+      return (
+        "Estimated median household income ranges from " +
+        fmtMoney(low) +
+        " in precinct " +
+        low.precinct +
+        " to " +
+        (top.length > 1
+          ? "$200,000 or more in precincts " + listAnd(top.map((r) => r.precinct))
+          : fmtMoney(sorted[0]) + " in precinct " + sorted[0].precinct) +
+        "."
+      );
+    },
+    summary: (rows) => ["Households", fmt(d3.sum(rows, (r) => r.households)), "In Oak Park’s 32 precincts"],
+    details: (r) => [["Households", fmt(r.households)]],
+    cols: [{ k: "households", label: "Households", format: (r) => fmt(r.households) }],
+  },
+  household_size: {
+    key: "persons_per_household",
+    title: "Persons per household by precinct",
+    label: "Persons per household",
+    high: "Largest households",
+    low: "Smallest households",
+    format: (r) => d3.format(".2f")(r.persons_per_household),
+    color: "var(--c5)",
+    note: "Estimates from the 2020–2024 American Community Survey: people living in households (Table B11002, everyone except people in group quarters such as nursing homes) divided by the number of households (Table B11001). Each census block group’s people are split among its 2020 census blocks by population and its households by housing units, the blocks are added up by precinct, and then people are divided by households. These are estimates with margins of error. Hover a precinct for details.",
+    summary: (rows) => {
+      const people = d3.sum(rows, (r) => r.household_pop),
+        households = d3.sum(rows, (r) => r.type_households);
+      return ["Oak Park average", d3.format(".2f")(people / households), fmt(people) + " people in " + fmt(households) + " households"];
+    },
+    details: (r) => [
+      ["People in households", fmt(r.household_pop)],
+      ["Households", fmt(r.type_households)],
+    ],
+    cols: [
+      { k: "household_pop", label: "People in households", format: (r) => fmt(r.household_pop) },
+      { k: "type_households", label: "Households", format: (r) => fmt(r.type_households) },
+    ],
+  },
+};
+
+function drawMetric(race) {
+  const cfg = METRICS[race.id];
+  const d = dash.data("demographics");
+  const rows = d.status === "ok" ? d.data.filter((r) => r[cfg.key] != null) : [];
+  const sorted = rows.slice().sort((a, b) => b[cfg.key] - a[cfg.key]);
+
+  // Header
+  const summary = rows.length ? cfg.summary(rows) : null;
+  document.getElementById("ov").hidden = true;
+  document.getElementById("race-title").textContent = cfg.title;
+  document.getElementById("race-sub").textContent = "2020–2024 American Community Survey 5-year estimates";
+  const take = document.getElementById("takeaway");
+  take.textContent = "";
+  if (sorted.length) {
+    const top = sorted[0],
+      low = sorted[sorted.length - 1];
+    take.textContent = cfg.takeaway
+      ? cfg.takeaway(sorted)
+      : cfg.label + " ranges from " + cfg.format(low) + " in precinct " + low.precinct + " to " + cfg.format(top) + " in precinct " + top.precinct + ".";
+  }
+
+  // Tiles
+  const box = document.getElementById("totals");
+  box.replaceChildren();
+  const tile = (name, num, sub) => {
+    const t = mk("div", "opx-tile");
+    t.append(mk("div", "opx-tile-name", name), mk("div", "opx-tile-num", num), mk("div", "opx-tile-share", sub));
+    box.appendChild(t);
+  };
+  const top3 = sorted.slice(0, 3),
+    bot3 = sorted.slice(-3).reverse();
+  tile(cfg.high, top3.map((r) => r.precinct).join(", "), top3.map(cfg.format).join(", "));
+  tile(cfg.low, bot3.map((r) => r.precinct).join(", "), bot3.map(cfg.format).join(", "));
+  if (summary) tile(...summary);
+
+  // Map
+  const mapBox = document.querySelector(".opx-mapbox"),
+    tip = mapBox.querySelector(".opx-tip"),
+    legend = document.getElementById("map-legend");
+  mapBox.querySelectorAll(".opx-fail, .opx-nomap").forEach((n) => n.remove());
+  legend.replaceChildren();
+  viewsEl.replaceChildren();
+  tip.hidden = true;
+  const bd = dash.data("boundaries");
+  if (!rows.length || bd.status !== "ok") {
+    mapBox.classList.add("dash-skeleton");
+    return;
+  }
+  mapBox.classList.remove("dash-skeleton");
+  mapBox.dataset.source = "boundaries demographics";
+  document.getElementById("map-title").textContent = cfg.label + " in each precinct";
+  document.getElementById("map-note").textContent = cfg.note;
+  const ext = d3.extent(rows, (r) => r[cfg.key]);
+  const bg = resolve("var(--color-bg)"),
+    c = resolve(cfg.color);
+  const lo = d3.interpolateRgb(bg, c)(0.08);
+  const ramp = d3.interpolateRgb(lo, c);
+  const fill = (r) => ramp((r[cfg.key] - ext[0]) / (ext[1] - ext[0] || 1));
+  const byP = new Map(rows.map((r) => [String(r.precinct), r]));
+  const shapes = bd.data.map((b) => ({
+    key: String(b.precinct),
+    r: byP.get(String(b.precinct)),
+    polys: polysOf(geomOf(b.geometry)),
+  }));
+  drawPrecincts(mapBox, shapes, fill, (event, r) => {
+    tip.replaceChildren();
+    tip.appendChild(mk("div", "opx-tip-title", "Precinct " + r.precinct));
+    const grid = mk("div", "opx-tip-t");
+    const sw = mk("i", "opx-sw");
+    sw.style.background = fill(r);
+    grid.append(sw, mk("strong", "", cfg.label), mk("strong", "v", cfg.format(r)));
+    cfg.details(r).forEach(([name, value]) => grid.append(mk("i"), mk("span", "", name), mk("span", "v", value)));
+    tip.appendChild(grid);
+    placeTip(mapBox, tip, event, String(r.precinct));
+  });
+  const w = mk("span");
+  const bar = mk("i", "opx-ramp");
+  bar.style.background = `linear-gradient(90deg, ${lo}, ${c})`;
+  w.append(cfg.format(sorted[sorted.length - 1]), bar, cfg.format(sorted[0]));
+  legend.appendChild(w);
+
+  // Table
+  document.getElementById("table-title").textContent = cfg.title;
+  document.getElementById("table-note").textContent = "Select a column heading to sort.";
+  const table = document.querySelector(".opx-table");
+  table.dataset.source = "demographics";
+  const head = table.querySelector("thead tr"),
+    tb = table.querySelector("tbody");
+  head.replaceChildren();
+  tb.replaceChildren();
+  const cols = [{ k: "precinct", label: "Precinct", format: (r) => String(r.precinct) }]
+    .concat(cfg.cols)
+    .concat([{ k: cfg.key, label: cfg.label, format: cfg.format, main: true }]);
+  const sortRows = tableHeader(head, cols, () => drawMetric(race));
+  sortRows(rows).forEach((r) => {
+    const tr = mk("tr");
+    tr.dataset.key = String(r.precinct);
+    cols.forEach((col) => tr.appendChild(mk("td", col.main ? "win" : "", col.format(r))));
+    tb.appendChild(tr);
+  });
+}
+
 dash.onData(() => {
   const race = currentRace();
   drawNav(race);
   if (race.composite) {
     drawLean(race);
+    return;
+  }
+  if (METRICS[race.id]) {
+    drawMetric(race);
+    return;
+  }
+  if (race.demographics) {
+    drawDemographics(race);
     return;
   }
   const cands = candidatesFor(race);
