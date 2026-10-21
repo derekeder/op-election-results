@@ -47,20 +47,6 @@
     "head_to_head": true
   },
   {
-    "race": "library_2025",
-    "progressive": [
-      "Annie K. Wilkinson",
-      "Colin Bird-Martinez",
-      "Mika Selena Yamamoto"
-    ],
-    "moderate": [],
-    "conservative": [
-      "Megan Butman"
-    ],
-    "average_lean_pct": 28.6,
-    "head_to_head": true
-  },
-  {
     "race": "president_2025",
     "progressive": [
       "Vicki Scaman"
@@ -73,10 +59,30 @@
     "head_to_head": true
   },
   {
+    "race": "library_2025",
+    "progressive": [
+      "Annie K. Wilkinson",
+      "Colin Bird-Martinez",
+      "Mika Selena Yamamoto",
+      "Maya L. Ganguly"
+    ],
+    "moderate": [
+      "Bruce C. Brigell",
+      "Matthew Fruth"
+    ],
+    "conservative": [
+      "Megan Butman",
+      "Daniel G. Suber"
+    ],
+    "average_lean_pct": 29.1,
+    "head_to_head": true
+  },
+  {
     "race": "d97_2025",
     "progressive": [
+      "Nancy Ross Dribin",
       "Becky Perez",
-      "Nancy Ross Dribin"
+      "Twyla Blackmond Larnell"
     ],
     "moderate": [
       "Venus Hurd Johnson"
@@ -84,7 +90,7 @@
     "conservative": [
       "Vincent Gay"
     ],
-    "average_lean_pct": 31.5,
+    "average_lean_pct": 36.2,
     "head_to_head": true
   },
   {

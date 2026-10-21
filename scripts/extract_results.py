@@ -5,6 +5,7 @@ index into data/lean.json, then rebuild js/data.js for the page.
 Usage: python3 scripts/extract_results.py
 """
 
+import csv
 import json
 import re
 import statistics
@@ -39,22 +40,33 @@ RACES = {
     "d200_2023": "2023-OP-d200-ElectionResults.xlsx",
 }
 
-# Candidates that define the progressive-conservative lean index, by race.
-# "moderate" is optional: moderates count as neutral, pulling a precinct
-# toward the center. Names must match the spreadsheet column headers exactly.
-# Only the local consolidated elections (2023 and 2025) are used. Left out because
-# their precinct patterns barely tracked the other races: 2026 assessor
-# (Kaegi vs. Hynes), 2024 County Board 1st District (Stamps) and 2023
-# District 200 (Livingston vs. Souders).
-LEAN = {
-    "trustee_2023": {"progressive": ["Brian D. Straw", "Susan Buchanan"], "moderate": ["Cory J. Wesley"], "conservative": ["James Taglia", "Simone M. Boutet"]},
-    "d200_2023": {"progressive": ["Jonathan Livingston"], "moderate": ["Tim Brandhorst", "Graham Y Brisben"], "conservative": ["Brian Souders"]},
-    "trustee_2025": {"progressive": ["Chibuike Enyia", "Jenna Leving Jacobson"], "moderate": ["Lucia Robinson", "Joshua VanderBerg"], "conservative": ["James Taglia"]},
-    "library_2025": {"progressive": ["Annie K. Wilkinson", "Colin Bird-Martinez", "Mika Selena Yamamoto"], "conservative": ["Megan Butman"]},
-    "president_2025": {"progressive": ["Vicki Scaman"], "conservative": ["Ravi Parakkat"]},
-    "d97_2025": {"progressive": ["Becky Perez", "Nancy Ross Dribin"], "moderate": ["Venus Hurd Johnson"], "conservative": ["Vincent Gay"]},
-    "d200_2025": {"progressive": ["Kathleen Odell", "Dave Schaafsma"], "moderate": ["Audrey Williams-Lee", "Frederick D Arkin"], "conservative": ["Joshua Gertz", "Nathan R. Mellman"]},
-}
+# Candidates that define the progressive-conservative lean, one row per
+# candidate: race id, candidate name (exactly as in the spreadsheet) and label
+# (progressive, moderate or conservative, or blank). Moderates count as
+# neutral, pulling a precinct toward the center. Candidates with a blank label
+# are ignored, and only races with at least one progressive and one
+# conservative count.
+LABELS = ROOT / "data" / "candidate_labels.csv"
+# Only these elections count toward the lean (the local consolidated elections)
+LEAN_YEARS = ("2023", "2025")
+
+
+def load_lean():
+    """Read the candidate labels into {race: {label: [candidates]}}, keeping race order."""
+    lean = {}
+    with open(LABELS, newline="") as f:
+        for row in csv.DictReader(f):
+            race, name, label = row["race"].strip(), row["candidate"].strip(), row["label"].strip().lower()
+            if not label or race[-4:] not in LEAN_YEARS:
+                continue
+            assert label in ("progressive", "moderate", "conservative"), f"{LABELS.name}: bad label {label!r} for {name!r}"
+            lean.setdefault(race, {"progressive": [], "moderate": [], "conservative": []})[label].append(name)
+    # The lean compares progressives with conservatives, so a race needs both
+    for race in [r for r, sides in lean.items() if not (sides["progressive"] and sides["conservative"])]:
+        print(f"lean: skipping {race}, which needs at least one progressive and one conservative")
+        del lean[race]
+    return lean
+
 
 NS = {
     "m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
@@ -143,7 +155,7 @@ def extract(path):
 def lean_index(datasets):
     """Score each current precinct on how progressive or conservative it votes.
 
-    For each race in LEAN, a precinct's lean is the progressive candidates'
+    For each race in data/candidate_labels.csv, a precinct's lean is the progressive candidates'
     share of the race's votes minus the conservative candidates' share. That
     is measured against the average Oak Park precinct and divided by the
     spread across precincts, so every race counts equally. The index is the
@@ -163,7 +175,7 @@ def lean_index(datasets):
     scores = {p: [] for p in rows}
     h2h = {p: [] for p in rows}
     races = []
-    for race, sides in LEAN.items():
+    for race, sides in load_lean().items():
         results = datasets[race]
         sides = {"progressive": sides["progressive"], "moderate": sides.get("moderate", []), "conservative": sides["conservative"]}
         for name in sides["progressive"] + sides["moderate"] + sides["conservative"]:
