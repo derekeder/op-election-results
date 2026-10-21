@@ -958,7 +958,7 @@ function drawLean(race) {
   document.getElementById("race-sub").textContent =
     "Composite of " +
     lr.length +
-    " local races, " +
+    " competitive local races, " +
     years +
     " · compared with the average Oak Park precinct";
   const byIndex = rows.slice().sort((a, b) => b.index - a.index);
@@ -1050,11 +1050,11 @@ function drawLean(race) {
   mapBox.dataset.source = "boundaries lean";
   // The map shows the absolute lean, centered on a tie
   document.getElementById("map-title").textContent =
-    "Absolute lean in each precinct";
+    "Progressive lean in each precinct";
   document.getElementById("map-note").textContent =
-    "In each race, the average progressive candidate’s votes minus the average conservative candidate’s, as a share of the progressive, moderate and conservative averages combined; moderates count as neutral and pull a precinct toward the center. The map averages this over the " +
+    "In each race, the average progressive candidate’s votes minus the average conservative candidate’s, as a share of the progressive, moderate and conservative averages combined; moderates count as neutral and pull a precinct toward the center. " +
     lr.length +
-    " races, on a scale from −100 (all conservative) to +100 (all progressive). Blue precincts favored progressives and orange ones conservatives; the middle of the scale is a tie. The index in the tiles and table instead compares precincts with each other. Hover a precinct for its full breakdown.";
+    " Blue precincts favored progressives and orange ones conservatives; the middle of the scale is a tie. The index in the tiles and table instead compares precincts with each other. Hover a precinct for its full breakdown.";
   const maxAbs = d3.max(rows, (r) => Math.abs(r.abs_lean_pts)) || 1;
   const fill = leanFill(maxAbs);
   const byP = new Map(rows.map((r) => [String(r.precinct), r]));
@@ -1112,7 +1112,7 @@ function drawLean(race) {
   // Table
   document.getElementById("table-title").textContent = "Lean by precinct";
   document.getElementById("table-note").textContent =
-    "Lean runs from −100% (all conservative) to +100% (all progressive), with 0 a tie. Shown for each precinct overall and for each race, with how many races the average progressive candidate outpolled the average conservative one. Select a column heading to sort.";
+    "Shown for each precinct overall and for each race, with how many races the average progressive candidate outpolled the average conservative one. Select a column heading to sort.";
   const table = document.querySelector(".opx-table");
   table.dataset.source = "lean";
   const head = table.querySelector("thead tr"),
