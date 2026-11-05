@@ -2,10 +2,16 @@
 
 An interactive map and table of precinct-level results for Oak Park races:
 
+- April 7, 2015 consolidated election: Park District board, Elementary School District 97 board and High School District 200 board
+- April 4, 2017 consolidated election: village trustee, village clerk, library board, Elementary School District 97 board, High School District 200 board, and the District 97 tax rate and bond referendums
+- April 2, 2019 consolidated election: village trustee, Park District board, District 97 board and District 200 board
+- April 6, 2021 consolidated election: village president, village clerk, village trustee, library board, District 97 board, District 200 board, Triton College trustee (2- and 6-year terms), Oak Park Township trustee, and the referendum on defunding the police department
 - April 4, 2023 consolidated election: village trustee and High School District 200 board
 - March 19, 2024 Democratic primary: 7th Congressional District, Cook County state's attorney, Clerk of the Circuit Court, Board of Review (3rd District) and County Board commissioner (1st District)
 - April 1, 2025 consolidated election: village trustee, village president, library board, Elementary School District 97 board, High School District 200 board and Triton College trustee
 - March 17, 2026 Democratic primary: U.S. Senate, comptroller, 7th Congressional District, 8th State House District, Cook County Board president, Cook County assessor and State Central Committeeperson (7th District)
+
+The 2024 and 2026 primaries are left out of the page's menu for now (`HIDDEN_YEARS` in `js/app.js`), but their data is still built and included in `js/data.js`; remove a year from that list to show it again.
 
 Every race except the village and library ones reaches beyond Oak Park; the page shows only Oak Park precincts. Only five Oak Park precincts (17, 25, 29, 30 and 31) are in the 8th State House District.
 
@@ -53,18 +59,28 @@ python3 scripts/extract_results.py
 
 To add a race, drop its spreadsheet in `data/source`, add it to `RACES` in the script, run it, and add a matching entry to `RACES` at the top of `js/app.js`.
 
+The 2015, 2017, 2019 and 2021 results come from the clerk's suburban-wide precinct canvass workbooks (`Precinct Canvass 2015.xls`, `Precinct Canvass 2017.xls`, `Precinct Canvass Apr 2019.xls` and `Apr 2021 Precinct Canvass.xls`), which hold every contest in suburban Cook. `scripts/extract_canvass.py` pulls the Oak Park contests listed in its `CANVASS` setting into one CSV per race in `data/source` (e.g. `2019-OP-trustee-canvass.csv`), checking them against the workbook's contest totals. It needs the `xlrd` package (`pip install xlrd`) and only has to be rerun when a canvass workbook changes; `extract_results.py` reads the CSVs. Uncontested contests (2015 village trustee, library board and Triton; 2017 village president, township offices, park board and Triton; 2019 library board and Triton; 2021 park board and township supervisor, clerk and assessor) aren't included.
+
 - `senate_2026.json`, `comptroller_2026.json`, `congress7_2026.json`, `staterep8_2026.json`, `countypres_2026.json`, `assessor_2026.json`, `statecentral_2026.json`, `congress7_2024.json`, `statesattorney_2024.json`, `circuitclerk_2024.json`, `boardofreview_2024.json`, `countyboard1_2024.json`, `trustee_2025.json`, `president_2025.json`, `library_2025.json`, `d97_2025.json`, `d200_2025.json`, `triton_2025.json`, `trustee_2023.json`, `d200_2023.json`: one row per precinct with registered voters, ballots cast, turnout, each candidate's votes, total votes and the top vote-getter (2023 files use 2023 precinct numbers).
 - `candidate_labels.csv`: every candidate, with the label (progressive, moderate, conservative or blank) used in the lean calculation.
 - `lean.json`: the progressive lean index for each current precinct, with each race's lean in points above or below the average precinct. `lean_races.json` lists the races and the candidates counted on each side.
 - `demographics.json`: estimated residents by race and ethnicity and by age group (counts and percentages), households, median household income, homeowners and renters, single- and multi-unit housing, household types (counts and percentages), and people in households and persons per household for each current precinct, from `scripts/demographics.py`.
+- `parkdistrict_2015.json`, `d97_2015.json`, `d200_2015.json`: the same, for the 38 precincts Oak Park had in 2015.
+- `clerk_2017.json`, `trustee_2017.json`, `library_2017.json`, `d97_2017.json`, `d200_2017.json`, `d97rate_2017.json`, `d97bonds_2017.json`, `trustee_2019.json`, `parkdistrict_2019.json`, `d97_2019.json`, `d200_2019.json`: the same, for the 37 precincts Oak Park had before 2022.
+- `trustee_2021.json`, `president_2021.json`, `clerk_2021.json`, `library_2021.json`, `d97_2021.json`, `d200_2021.json`, `triton2yr_2021.json`, `triton6yr_2021.json`, `township_2021.json`, `defundpolice_2021.json`: the same, for 2021 on those 37 precincts. The referendum files have Yes and No in place of candidates.
 - `precinct_boundaries.json`: the 32 current Oak Park precinct boundaries, with each precinct's current number and its 2023 number.
+- `precinct_boundaries_2017.json`: the 37 Oak Park precinct boundaries used 2017–2021, from `data/source/suburban-cook-precincts-2021.geojson`, for the 2017, 2019 and 2021 maps.
+- `precinct_boundaries_2015.json`: the 38 Oak Park precinct boundaries used 2012–2015, from the county's Election Precincts - 2011 map (`data/source/suburban-cook-precincts-2011.geojson`, https://datacatalog.cookcountyil.gov/d/8xd4-7sya), for the 2015 maps.
 - `oak-park-2025-trustee-results.geojson`: 2025 trustee results joined to the precinct boundaries, for GIS tools.
 
 ## Sources and notes
 
 - Results: Cook County Clerk precinct results spreadsheets for each race.
 - Boundaries: Cook County suburban election precincts map.
+- Oak Park had 38 precincts through 2015. For 2017, precincts 17 and 36 were merged into a new 17 and precinct 38 was renumbered 36; the other lines stayed the same.
+- Oak Park had 37 precincts from 2017 through 2021; they were redrawn into today's 32 in 2022. The 2015, 2017, 2019 and 2021 results are mapped on the old lines and their precinct numbers don't correspond to today's, so they aren't part of the progressive lean. Registered voters per precinct track closely from 2017 to 2021, consistent with the lines being unchanged between those elections.
 - The 2023 election used the same precinct lines as today, under different numbers; precincts were renumbered 1–32 in 2024. 2023 precinct 33 is today's 30, 34 is today's 21, and 35 is today's 7; the rest kept their numbers.
+- Write-in votes are left out of the 2017 and 2019 races, matching the other races' spreadsheets, which don't list them.
 - Trustee races were vote-for-3, so a candidate's percentage is their share of all trustee votes cast, not of voters.
 
 ## Progressive lean

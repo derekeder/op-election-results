@@ -38,6 +38,42 @@ RACES = {
     "countyboard1_2024": "2024-Primary-OP-stamps-ElectionResults.xlsx",
     "trustee_2023": "2023-OP-Trustees-ElectionResults.xlsx",
     "d200_2023": "2023-OP-d200-ElectionResults.xlsx",
+    # Pulled from the county-wide canvass workbooks by scripts/extract_canvass.py
+    "clerk_2017": "2017-OP-clerk-canvass.csv",
+    "trustee_2017": "2017-OP-trustee-canvass.csv",
+    "library_2017": "2017-OP-library-canvass.csv",
+    "d97_2017": "2017-OP-d97-canvass.csv",
+    "d200_2017": "2017-OP-d200-canvass.csv",
+    "d97rate_2017": "2017-OP-d97rate-canvass.csv",
+    "d97bonds_2017": "2017-OP-d97bonds-canvass.csv",
+    "trustee_2021": "2021-OP-trustee-canvass.csv",
+    "president_2021": "2021-OP-president-canvass.csv",
+    "clerk_2021": "2021-OP-clerk-canvass.csv",
+    "library_2021": "2021-OP-library-canvass.csv",
+    "d97_2021": "2021-OP-d97-canvass.csv",
+    "d200_2021": "2021-OP-d200-canvass.csv",
+    "triton2yr_2021": "2021-OP-triton2yr-canvass.csv",
+    "triton6yr_2021": "2021-OP-triton6yr-canvass.csv",
+    "township_2021": "2021-OP-township-canvass.csv",
+    "defundpolice_2021": "2021-OP-defundpolice-canvass.csv",
+    "parkdistrict_2015": "2015-OP-parkdistrict-canvass.csv",
+    "d97_2015": "2015-OP-d97-canvass.csv",
+    "d200_2015": "2015-OP-d200-canvass.csv",
+    "trustee_2019": "2019-OP-trustee-canvass.csv",
+    "parkdistrict_2019": "2019-OP-parkdistrict-canvass.csv",
+    "d97_2019": "2019-OP-d97-canvass.csv",
+    "d200_2019": "2019-OP-d200-canvass.csv",
+}
+
+# Earlier Oak Park precinct lines, from the county's precinct maps, written to
+# data/precinct_<set>.json. Each set lists its source file, the property
+# holding the 7-digit precinct id (Oak Park Township's start with 85), how
+# many precincts Oak Park had, and the elections drawn on it.
+OLD_BOUNDARIES = {
+    # The 38 precincts used 2012-2015
+    "boundaries_2015": (SOURCE / "suburban-cook-precincts-2011.geojson", "idpct", 38, ("2015",)),
+    # The 37 precincts used 2017-2021, before the 2022 redraw
+    "boundaries_2017": (SOURCE / "suburban-cook-precincts-2021.geojson", "precinctid", 37, ("2017", "2019", "2021")),
 }
 
 # Candidates that define the progressive-conservative lean, one row per
@@ -114,8 +150,32 @@ def to_int(s):
     return int(str(s).replace(",", ""))
 
 
+def old_boundaries(path, id_field, count):
+    """Oak Park's precinct boundaries from a county precinct map, rounded like precinct_boundaries.json."""
+    def ring(r):
+        pts = [[round(x, 6), round(y, 6)] for x, y in r]
+        return [pt for i, pt in enumerate(pts) if i == 0 or pt != pts[i - 1]]
+
+    out = []
+    for f in json.loads(path.read_text())["features"]:
+        pid = str(f["properties"][id_field])
+        if not pid.startswith("85"):
+            continue
+        g = f["geometry"]
+        coords = [[ring(r) for r in poly] for poly in (g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]])]
+        geometry = {"type": "Polygon", "coordinates": coords[0]} if len(coords) == 1 else {"type": "MultiPolygon", "coordinates": coords}
+        out.append({"precinct": int(pid[2:]), "geometry": geometry})
+    assert sorted(b["precinct"] for b in out) == list(range(1, count + 1)), f"{path.name}: expected Oak Park precincts 1-{count}"
+    return sorted(out, key=lambda b: b["precinct"])
+
+
 def extract(path):
-    header, *rows = read_sheet(path, "Precinct")
+    if path.suffix == ".csv":
+        # Already checked against the county's contest totals by extract_canvass.py
+        with open(path, newline="") as f:
+            header, *rows = list(csv.reader(f))
+    else:
+        header, *rows = read_sheet(path, "Precinct")
     assert header[:3] == ["Precinct", "Registered Voters", "Ballots Cast"], header
     assert header[-1] == "Total Votes", header
     candidates = header[3:-1]
@@ -144,6 +204,8 @@ def extract(path):
         })
 
     # The precinct rows should add up to the county's total row
+    if path.suffix == ".csv":
+        return sorted(results, key=lambda r: r["precinct"])
     assert check, f"{path.name}: no total row"
     for i, key in enumerate(["registered_voters", "ballots_cast"]):
         assert sum(r[key] for r in results) == to_int(check[i + 1]), f"{path.name}: {key} sum mismatch"
@@ -210,9 +272,15 @@ def lean_index(datasets):
 
 def main():
     datasets = {"boundaries": json.loads((ROOT / "data" / "precinct_boundaries.json").read_text())}
+    for name, (path, id_field, count, _) in OLD_BOUNDARIES.items():
+        datasets[name] = old_boundaries(path, id_field, count)
+        (ROOT / "data" / f"precinct_{name}.json").write_text(json.dumps(datasets[name], separators=(",", ":")))
     for race, fname in RACES.items():
         results = extract(SOURCE / fname)
         (ROOT / "data" / f"{race}.json").write_text(json.dumps(results, ensure_ascii=False, separators=(",", ":")))
+        for name, (_, _, count, years) in OLD_BOUNDARIES.items():
+            if race[-4:] in years:
+                assert len(results) == count, f"{race}: expected all {count} precincts of {name}"
         datasets[race] = results
         print(f"{race}: {len(results)} precincts from {fname}")
     lean, lean_races = lean_index(datasets)

@@ -3,11 +3,15 @@ const ELECTIONS = {
   2025: "2025 election",
   2024: "2024 Democratic primary",
   2023: "2023 election",
+  2021: "2021 election",
+  2019: "2019 election",
+  2017: "2017 election",
+  2015: "2015 election",
   composite: "Progressive lean",
   demographics: "Demographics",
 };
 
-const RACES = [
+const ALL_RACES = [
   {
     id: "senate_2026",
     year: "2026",
@@ -238,8 +242,283 @@ const RACES = [
     map: true,
     join: "precinct_2023",
     scope: "Oak Park precincts only; the district also includes River Forest",
+  },  {
+    id: "trustee_2021",
+    year: "2021",
+    tab: "Trustee",
+    office: "Village of Oak Park trustee",
+    noun: "trustee",
+    date: "April 6, 2021 consolidated election",
+    voteFor: 3,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "president_2021",
+    year: "2021",
+    tab: "Village President",
+    office: "Village of Oak Park president",
+    noun: "village president",
+    date: "April 6, 2021 consolidated election",
+    voteFor: 1,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "clerk_2021",
+    year: "2021",
+    tab: "Village Clerk",
+    office: "Village of Oak Park clerk",
+    noun: "village clerk",
+    date: "April 6, 2021 consolidated election",
+    voteFor: 1,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "library_2021",
+    year: "2021",
+    tab: "Library Board",
+    office: "Oak Park Public Library trustee",
+    noun: "library trustee",
+    date: "April 6, 2021 consolidated election",
+    voteFor: 4,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "d97_2021",
+    year: "2021",
+    tab: "District 97",
+    office: "Oak Park Elementary School District 97 board",
+    noun: "District 97 board",
+    date: "April 6, 2021 consolidated election",
+    voteFor: 3,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "d200_2021",
+    year: "2021",
+    tab: "District 200",
+    office: "Oak Park and River Forest High School District 200 board",
+    noun: "District 200 board",
+    date: "April 6, 2021 consolidated election",
+    voteFor: 4,
+    map: true,
+    boundaries: "boundaries_2017",
+    scope: "Oak Park precincts only; the district also includes River Forest",
+  },
+  {
+    id: "triton2yr_2021",
+    year: "2021",
+    tab: "Triton College (2-year)",
+    office: "Triton College trustee (2-year term)",
+    noun: "Triton College trustee",
+    date: "April 6, 2021 consolidated election",
+    voteFor: 1,
+    map: true,
+    boundaries: "boundaries_2017",
+    scope: "Oak Park precincts only; the college district covers much of western Cook County",
+  },
+  {
+    id: "triton6yr_2021",
+    year: "2021",
+    tab: "Triton College (6-year)",
+    office: "Triton College trustee (6-year term)",
+    noun: "Triton College trustee",
+    date: "April 6, 2021 consolidated election",
+    voteFor: 2,
+    map: true,
+    boundaries: "boundaries_2017",
+    scope: "Oak Park precincts only; the college district covers much of western Cook County",
+  },
+  {
+    id: "township_2021",
+    year: "2021",
+    tab: "Township Trustee",
+    office: "Oak Park Township trustee",
+    noun: "township trustee",
+    date: "April 6, 2021 consolidated election",
+    voteFor: 4,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "defundpolice_2021",
+    year: "2021",
+    tab: "Defund the Police Referendum",
+    office: "Village of Oak Park referendum on defunding the police department",
+    noun: "the defund the police question",
+    date: "April 6, 2021 consolidated election",
+    voteFor: 1,
+    referendum: true,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "trustee_2019",
+    year: "2019",
+    tab: "Trustee",
+    office: "Village of Oak Park trustee",
+    noun: "trustee",
+    date: "April 2, 2019 consolidated election",
+    voteFor: 3,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "parkdistrict_2019",
+    year: "2019",
+    tab: "Park District",
+    office: "Park District of Oak Park commissioner",
+    noun: "park commissioner",
+    date: "April 2, 2019 consolidated election",
+    voteFor: 3,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "d97_2019",
+    year: "2019",
+    tab: "District 97",
+    office: "Oak Park Elementary School District 97 board",
+    noun: "District 97 board",
+    date: "April 2, 2019 consolidated election",
+    voteFor: 4,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "d200_2019",
+    year: "2019",
+    tab: "District 200",
+    office: "Oak Park and River Forest High School District 200 board",
+    noun: "District 200 board",
+    date: "April 2, 2019 consolidated election",
+    voteFor: 3,
+    map: true,
+    boundaries: "boundaries_2017",
+    scope: "Oak Park precincts only; the district also includes River Forest",
+  },
+  {
+    id: "trustee_2017",
+    year: "2017",
+    tab: "Trustee",
+    office: "Village of Oak Park trustee",
+    noun: "trustee",
+    date: "April 4, 2017 consolidated election",
+    voteFor: 3,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "clerk_2017",
+    year: "2017",
+    tab: "Village Clerk",
+    office: "Village of Oak Park clerk",
+    noun: "village clerk",
+    date: "April 4, 2017 consolidated election",
+    voteFor: 1,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "library_2017",
+    year: "2017",
+    tab: "Library Board",
+    office: "Oak Park Public Library trustee",
+    noun: "library trustee",
+    date: "April 4, 2017 consolidated election",
+    voteFor: 4,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "d97_2017",
+    year: "2017",
+    tab: "District 97",
+    office: "Oak Park Elementary School District 97 board",
+    noun: "District 97 board",
+    date: "April 4, 2017 consolidated election",
+    voteFor: 3,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "d200_2017",
+    year: "2017",
+    tab: "District 200",
+    office: "Oak Park and River Forest High School District 200 board",
+    noun: "District 200 board",
+    date: "April 4, 2017 consolidated election",
+    voteFor: 4,
+    map: true,
+    boundaries: "boundaries_2017",
+    scope: "Oak Park precincts only; the district also includes River Forest",
+  },
+  {
+    id: "d97rate_2017",
+    year: "2017",
+    tab: "D97 Tax Rate Referendum",
+    office: "District 97 proposition to increase the limiting tax rate",
+    noun: "the tax rate proposition",
+    date: "April 4, 2017 consolidated election",
+    voteFor: 1,
+    referendum: true,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "d97bonds_2017",
+    year: "2017",
+    tab: "D97 Bond Referendum",
+    office: "District 97 proposition to issue bonds",
+    noun: "the bond proposition",
+    date: "April 4, 2017 consolidated election",
+    voteFor: 1,
+    referendum: true,
+    map: true,
+    boundaries: "boundaries_2017",
+  },
+  {
+    id: "parkdistrict_2015",
+    year: "2015",
+    tab: "Park District",
+    office: "Park District of Oak Park commissioner",
+    noun: "park commissioner",
+    date: "April 7, 2015 consolidated election",
+    voteFor: 3,
+    map: true,
+    boundaries: "boundaries_2015",
+  },
+  {
+    id: "d97_2015",
+    year: "2015",
+    tab: "District 97",
+    office: "Oak Park Elementary School District 97 board",
+    noun: "District 97 board",
+    date: "April 7, 2015 consolidated election",
+    voteFor: 4,
+    map: true,
+    boundaries: "boundaries_2015",
+  },
+  {
+    id: "d200_2015",
+    year: "2015",
+    tab: "District 200",
+    office: "Oak Park and River Forest High School District 200 board",
+    noun: "District 200 board",
+    date: "April 7, 2015 consolidated election",
+    voteFor: 3,
+    map: true,
+    boundaries: "boundaries_2015",
+    scope: "Oak Park precincts only; the district also includes River Forest",
   },
 ];
+// Elections left out of the menu for now; their data is still built and kept in js/data.js
+const HIDDEN_YEARS = ["2024", "2026"];
+const RACES = ALL_RACES.filter((r) => !HIDDEN_YEARS.includes(r.year));
 
 RACES.filter((r) => !r.composite && !r.demographics).forEach((race) => {
   dash.calc("totals_" + race.id, {
@@ -409,8 +688,7 @@ function drawHeader(race) {
     race.date +
     " · " +
     race.office +
-    ", vote for " +
-    race.voteFor +
+    (race.referendum ? "" : ", vote for " + race.voteFor) +
     (race.scope ? " · " + race.scope : "");
   const o = dash.data("overall_" + race.id);
   const b = document.getElementById("ov-ballots"),
@@ -451,7 +729,7 @@ function drawHeader(race) {
   const [first, ...rest] = winners;
   if (!first) return;
   el.append(
-    first.candidate + " got the most votes in ",
+    first.candidate + (race.referendum ? " won in " : " got the most votes in "),
     num(first),
     " of " + total + " precincts",
   );
@@ -459,7 +737,7 @@ function drawHeader(race) {
     el.append(
       (i === 0 ? "; " : i === rest.length - 1 ? " and " : ", ") +
         r.candidate +
-        " led in ",
+        (race.referendum ? " won in " : " led in "),
       num(r),
     );
   });
@@ -510,6 +788,13 @@ function drawTiles(race) {
 }
 
 const viewsEl = document.querySelector(".opx-views");
+// Map notes for races drawn on earlier precinct lines
+const BOUNDARY_NOTES = {
+  boundaries_2017:
+    "Drawn on Oak Park’s 37 precincts from before the 2022 redraw, so precinct numbers and lines don’t match today’s.",
+  boundaries_2015:
+    "Drawn on Oak Park’s 38 precincts used through 2015, so precinct numbers and lines don’t match today’s.",
+};
 function drawMap(race, cands) {
   const box = document.querySelector(".opx-mapbox");
   const tip = box.querySelector(".opx-tip");
@@ -535,9 +820,9 @@ function drawMap(race, cands) {
     );
     return;
   }
-  box.dataset.source = "boundaries " + race.id;
+  box.dataset.source = (race.boundaries || "boundaries") + " " + race.id;
   const d = dash.data(race.id),
-    bd = dash.data("boundaries");
+    bd = dash.data(race.boundaries || "boundaries");
   if (d.status !== "ok" || bd.status !== "ok" || !cands.length) {
     if (d.status === "error" || bd.status === "error") {
       box.classList.remove("dash-skeleton");
@@ -574,22 +859,27 @@ function drawMap(race, cands) {
     });
 
   document.getElementById("map-title").textContent = vc
-    ? vc.name + "’s share of votes by precinct"
+    ? vc.name + (race.referendum ? " share" : "’s share") + " of votes by precinct"
     : race.voteFor === 1
       ? "Winner in each precinct"
       : "Leading candidate in each precinct";
   document.getElementById("map-note").textContent = vc
-    ? (race.voteFor === 1
+    ? (race.referendum
+        ? "Share of votes cast on " + race.noun + " in each precinct."
+        : race.voteFor === 1
         ? "Share of votes cast for " + race.noun + " in each precinct."
         : "Share of all " +
           race.noun +
           " votes cast in each precinct (each voter could pick up to " +
           race.voteFor +
           ").") + " Hover a precinct for its full results."
-    : "Colored by the candidate with the most votes. Darker shading means a wider lead over second place; gray means a tie. Hover a precinct for its full results.";
+    : "Colored by the " + (race.referendum ? "winning side" : "candidate with the most votes") + ". Darker shading means a wider lead over second place; gray means a tie. Hover a precinct for its full results.";
   if (race.join)
     document.getElementById("map-note").textContent +=
       " Labels use 2023 precinct numbers; the lines are the same as today, renumbered in 2024.";
+  if (BOUNDARY_NOTES[race.boundaries])
+    document.getElementById("map-note").textContent +=
+      " " + BOUNDARY_NOTES[race.boundaries];
   if (d.data.length < bd.data.length)
     document.getElementById("map-note").textContent +=
       " Only " +
@@ -884,7 +1174,8 @@ function tableHeader(head, cols, redraw) {
 function drawTable(race, cands) {
   document.getElementById("table-title").textContent = "Votes by precinct";
   document.getElementById("table-note").textContent =
-    "Select a column heading to sort. Bold marks the precinct’s top vote-getter.";
+    "Select a column heading to sort. Bold marks the precinct’s " +
+    (race.referendum ? "winning side." : "top vote-getter.");
   const table = document.querySelector(".opx-table");
   table.dataset.source = race.id;
   const head = table.querySelector("thead tr"),
@@ -899,7 +1190,7 @@ function drawTable(race, cands) {
     .concat(
       cands.map((c) => ({ k: c.name, label: lastName(c.name), cand: true })),
     )
-    .concat([{ k: "top_candidate", label: "Top vote-getter" }]);
+    .concat([{ k: "top_candidate", label: race.referendum ? "Result" : "Top vote-getter" }]);
   const sortRows = tableHeader(head, cols, () => drawTable(race, cands));
   const d = dash.data(race.id);
   if (d.status !== "ok" || !cands.length) return;
