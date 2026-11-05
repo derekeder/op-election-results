@@ -76,6 +76,8 @@ The 2015, 2017, 2019 and 2021 results come from the clerk's suburban-wide precin
 ## Sources and notes
 
 - Results: Cook County Clerk precinct results spreadsheets for each race.
+  - 2009 - present: https://www.cookcountyclerkil.gov/elections/results-and-election-data/election-data/precinct-canvasses
+  - 2022 to present: https://www.cookcountyclerkil.gov/elections/results-and-election-data/election-results
 - Boundaries: Cook County suburban election precincts map.
 - Oak Park had 38 precincts through 2015. For 2017, precincts 17 and 36 were merged into a new 17 and precinct 38 was renumbered 36; the other lines stayed the same.
 - Oak Park had 37 precincts from 2017 through 2021; they were redrawn into today's 32 in 2022. The 2015, 2017, 2019 and 2021 results are mapped on the old lines and their precinct numbers don't correspond to today's, so they aren't part of the progressive lean. Registered voters per precinct track closely from 2017 to 2021, consistent with the lines being unchanged between those elections.
