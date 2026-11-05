@@ -1,7 +1,7 @@
 (function(){
   const datasets = window.OPX_DATASETS; const calcs = {}; const L = [];
   // The selected race and map view live in the URL (?race=…&view=…) so views can be linked to
-  const defaults = { race: 'trustee_2023', view: 'leader' };
+  const defaults = { race: 'trustee_2025', view: 'leader' };
   const fromURL = () => { const q = new URLSearchParams(location.search); return { race: q.get('race') || defaults.race, view: q.get('view') || defaults.view }; };
   const toURL = () => {
     const q = new URLSearchParams({ race: params.race });
