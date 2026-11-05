@@ -17,7 +17,7 @@ Every race except the village and library ones reaches beyond Oak Park; the page
 
 ## Viewing it
 
-`index.html` is a static page with no build step or internet connection needed. Open it directly in a browser, or publish it with GitHub Pages.
+`index.html` is a static page with no build step. Open it directly in a browser, or publish it with GitHub Pages. Text is set in Open Sans and Merriweather from Google Fonts; without an internet connection it falls back to Helvetica/Arial and Georgia.
 
 The URL records the selected race and map view, so a specific view can be shared, e.g. `index.html?race=d97_2025&view=Becky+Perez`. Race ids are the data file names listed below.
 
@@ -87,7 +87,7 @@ The 2015, 2017, 2019 and 2021 results come from the clerk's suburban-wide precin
 
 ## Progressive lean
 
-The **Progressive lean** view scores each precinct on how progressive or conservative it votes compared with the rest of Oak Park. The candidates counted on each side are listed in `data/candidate_labels.csv`, one row for every candidate in every race, with its race id, name (exactly as in the results spreadsheet) and label: `progressive`, `moderate`, `conservative` or blank. Candidates with a blank label are ignored, and only races with at least one progressive and one conservative count. Only the 2023 and 2025 local elections are used (`LEAN_YEARS` in the script); labels for other races are kept in the file but ignored. Edit the file (in a spreadsheet or text editor) and rerun the script to change the index.
+The **Progressive lean** view scores each precinct on how progressive or conservative it votes compared with the rest of Oak Park. The candidates counted on each side are listed in `data/candidate_labels.csv`, one row for every candidate in every consolidated (odd-year) election, with its race id, name (exactly as in the results spreadsheet) and label: `progressive`, `moderate`, `conservative` or blank. Candidates with a blank label are ignored, and only races with at least one progressive and one conservative count. Only the 2023 and 2025 local elections are used (`LEAN_YEARS` in the script); the 2015–2021 races are listed, unlabeled, but ignored, since their precincts don't match today's. The even-year primaries aren't part of the lean and aren't listed. Edit the file (in a spreadsheet or text editor) and rerun the script to change the index.
 
 For each race, a precinct's lean is the progressive candidates' share of the vote minus the conservative candidates' share. That is measured against the average Oak Park precinct and divided by the spread across precincts, so every race counts equally regardless of how close it was. The index is the average over the races: above 0 leans more progressive than the average precinct, below 0 more conservative. Because Oak Park as a whole votes progressive, the index is relative: a "conservative" precinct is conservative for Oak Park.
 

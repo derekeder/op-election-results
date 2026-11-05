@@ -629,6 +629,9 @@ const selectRace = (r) => {
   dash.setParams({ race: r.id, view: "leader" });
   dash.setLink("summary");
 };
+// Elections on the first row; the progressive lean and demographics views on their own row below
+const yearRows = [mk("div", "opx-yrow"), mk("div", "opx-yrow")];
+yearsEl.append(...yearRows);
 [...new Set(RACES.map((r) => r.year))].sort().forEach((year) => {
   const b = mk("button", "", ELECTIONS[year] || year + " election");
   b.type = "button";
@@ -642,7 +645,7 @@ const selectRace = (r) => {
         RACES.find((r) => r.year === year),
     );
   });
-  yearsEl.appendChild(b);
+  yearRows[/^\d{4}$/.test(year) ? 0 : 1].appendChild(b);
 });
 RACES.forEach((r) => {
   const b = mk("button", "", r.tab);
