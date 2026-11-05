@@ -1,12 +1,12 @@
 const ELECTIONS = {
   2026: "2026 Democratic primary",
-  2025: "2025 election",
+  2025: "2025",
   2024: "2024 Democratic primary",
-  2023: "2023 election",
-  2021: "2021 election",
-  2019: "2019 election",
-  2017: "2017 election",
-  2015: "2015 election",
+  2023: "2023",
+  2021: "2021",
+  2019: "2019",
+  2017: "2017",
+  2015: "2015",
   composite: "Progressive lean",
   demographics: "Demographics",
 };
@@ -633,7 +633,7 @@ const selectRace = (r) => {
 const yearRows = [mk("div", "opx-yrow"), mk("div", "opx-yrow")];
 yearsEl.append(...yearRows);
 [...new Set(RACES.map((r) => r.year))].sort().forEach((year) => {
-  const b = mk("button", "", ELECTIONS[year] || year + " election");
+  const b = mk("button", "", ELECTIONS[year] || year);
   b.type = "button";
   b.dataset.year = year;
   b.addEventListener("click", () => {
