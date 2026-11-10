@@ -103,9 +103,7 @@ a { color: var(--accent); }
 .opx-fail { display: flex; align-items: center; justify-content: center; gap: var(--cds-gap-xs); color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); min-height: inherit; }
 .opx-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
 .opx-nav { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: var(--cds-gap-sm) var(--cds-gap-md); margin-bottom: var(--cds-gap-md);
-  position: sticky; top: 0; z-index: 10; padding: var(--cds-pad-sm) 0; background: var(--color-bg); border-bottom: 1px solid var(--color-border-line);
-  /* Extend the background to the window edges so content doesn't show beside it */
-  box-shadow: 0 0 0 100vmax var(--color-bg); clip-path: inset(0 -100vmax); }
+  padding: var(--cds-pad-sm) 0; border-bottom: 1px solid var(--color-border-line); }
 .opx-navlabel { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
 .opx-years { display: flex; flex-direction: column; gap: var(--cds-gap-sm); min-width: 0; }
 .opx-yrow, .opx-races { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); }
@@ -116,7 +114,7 @@ a { color: var(--accent); }
 .opx-years button[data-year="composite"][aria-pressed="true"], .opx-years button[data-year="demographics"][aria-pressed="true"] { background: var(--nav); color: var(--color-bg); border-color: var(--nav); }
 .opx-races button { font: inherit; font-size: var(--cds-font-size-caption); font-weight: 600; padding: var(--cds-pad-xs) var(--cds-pad-md); border-radius: 999px; border: 1px solid var(--color-border-line); background: transparent; color: var(--color-fg); cursor: pointer; }
 .opx-races button[hidden] { display: none; }
-/* On narrow screens, scroll each row sideways so the sticky bar stays short */
+/* On narrow screens, scroll each row sideways so the nav stays short */
 @media (max-width: 640px) {
   .opx-yrow, .opx-races { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .opx-yrow::-webkit-scrollbar, .opx-races::-webkit-scrollbar { display: none; }
