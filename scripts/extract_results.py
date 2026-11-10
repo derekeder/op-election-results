@@ -18,6 +18,7 @@ SOURCE = ROOT / "data" / "source"
 
 # Race id (and output file name) -> source spreadsheet
 RACES = {
+    "israel_2026": "ElectionResults-2026-referrendum.xlsx",
     "senate_2026": "2026-Primary-OP-Senate-ElectionResults.xlsx",
     "comptroller_2026": "2026-Primary-OP-comptroller-ElectionResults.xlsx",
     "congress7_2026": "2026-Primary-OP-7th-ElectionResults.xlsx",

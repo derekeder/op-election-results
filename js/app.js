@@ -1,4 +1,5 @@
 const ELECTIONS = {
+  "2026g": "2026",
   2026: "2026 Democratic primary",
   2025: "2025",
   2024: "2024 Democratic primary",
@@ -11,7 +12,20 @@ const ELECTIONS = {
   demographics: "Demographics",
 };
 
+// Races are grouped into elections by year, or by `election` when a year had more than one
 const ALL_RACES = [
+  {
+    id: "israel_2026",
+    year: "2026",
+    election: "2026g",
+    tab: "Israel Investment Referendum",
+    office: "Village of Oak Park referendum on investment in Israel",
+    noun: "the Israel investment question",
+    date: "November 3, 2026 general election",
+    voteFor: 1,
+    referendum: true,
+    map: true,
+  },
   {
     id: "senate_2026",
     year: "2026",
@@ -518,7 +532,8 @@ const ALL_RACES = [
 ];
 // Elections left out of the menu for now; their data is still built and kept in js/data.js
 const HIDDEN_YEARS = ["2024", "2026"];
-const RACES = ALL_RACES.filter((r) => !HIDDEN_YEARS.includes(r.year));
+const electionOf = (r) => r.election || r.year;
+const RACES = ALL_RACES.filter((r) => !HIDDEN_YEARS.includes(electionOf(r)));
 
 RACES.filter((r) => !r.composite && !r.demographics).forEach((race) => {
   dash.calc("totals_" + race.id, {
@@ -632,26 +647,26 @@ const selectRace = (r) => {
 // Elections on the first row; the progressive lean and demographics views on their own row below
 const yearRows = [mk("div", "opx-yrow"), mk("div", "opx-yrow")];
 yearsEl.append(...yearRows);
-[...new Set(RACES.map((r) => r.year))].sort().forEach((year) => {
+[...new Set(RACES.map(electionOf))].sort().forEach((year) => {
   const b = mk("button", "", ELECTIONS[year] || year);
   b.type = "button";
   b.dataset.year = year;
   b.addEventListener("click", () => {
     const cur = currentRace();
-    if (cur.year === year) return;
+    if (electionOf(cur) === year) return;
     // Stay on the same office if it was on the ballot that year
     selectRace(
-      RACES.find((r) => r.year === year && kindOf(r) === kindOf(cur)) ||
-        RACES.find((r) => r.year === year),
+      RACES.find((r) => electionOf(r) === year && kindOf(r) === kindOf(cur)) ||
+        RACES.find((r) => electionOf(r) === year),
     );
   });
-  yearRows[/^\d{4}$/.test(year) ? 0 : 1].appendChild(b);
+  yearRows[/^\d{4}/.test(year) ? 0 : 1].appendChild(b);
 });
 RACES.forEach((r) => {
   const b = mk("button", "", r.tab);
   b.type = "button";
   b.dataset.race = r.id;
-  b.dataset.year = r.year;
+  b.dataset.year = electionOf(r);
   b.addEventListener("click", () => selectRace(r));
   racesEl.appendChild(b);
 });
@@ -667,10 +682,10 @@ function drawNav(race) {
   yearsEl
     .querySelectorAll("button")
     .forEach((b) =>
-      b.setAttribute("aria-pressed", String(b.dataset.year === race.year)),
+      b.setAttribute("aria-pressed", String(b.dataset.year === electionOf(race))),
     );
   racesEl.querySelectorAll("button").forEach((b) => {
-    b.hidden = b.dataset.year !== race.year;
+    b.hidden = b.dataset.year !== electionOf(race);
     b.setAttribute("aria-pressed", String(b.dataset.race === race.id));
   });
   // When the row scrolls sideways (narrow screens), keep the selected race in view
