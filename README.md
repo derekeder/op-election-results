@@ -84,6 +84,7 @@ The 2015, 2017, 2019 and 2021 results come from the clerk's suburban-wide precin
 - Oak Park had 37 precincts from 2017 through 2021; they were redrawn into today's 32 in 2022. The 2015, 2017, 2019 and 2021 results are mapped on the old lines and their precinct numbers don't correspond to today's, so they aren't part of the progressive lean. Registered voters per precinct track closely from 2017 to 2021, consistent with the lines being unchanged between those elections.
 - The 2023 election used the same precinct lines as today, under different numbers; precincts were renumbered 1–32 in 2024. 2023 precinct 33 is today's 30, 34 is today's 21, and 35 is today's 7; the rest kept their numbers.
 - Write-in votes are left out of the 2017 and 2019 races, matching the other races' spreadsheets, which don't list them.
+- Every race shows how many voters skipped it, as a tile, a table column and a map view. In vote-for-1 races and referendums that's **left blank**: ballots cast minus votes cast. Where voters could pick several candidates, the results can't tell a blank ballot from one with fewer picks than allowed, so those races show **undervotes**: ballots cast times the number of seats, minus votes cast, as a share of those possible votes. Write-ins, which aren't in the results, count as blank.
 - Trustee races were vote-for-3, so a candidate's percentage is their share of all trustee votes cast, not of voters.
 
 ## Progressive lean

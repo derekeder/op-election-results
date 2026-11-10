@@ -794,6 +794,20 @@ function drawHeader(race) {
   el.append(".");
 }
 
+// Ballots that skipped the race. In vote-for-1 races and referendums that's ballots
+// cast minus votes. Where voters could pick several candidates, the results can't
+// tell a blank ballot from a partly filled one, so count undervotes instead:
+// ballots cast times seats, minus votes cast.
+const BLANK_COLOR = "var(--color-fg-muted)";
+const blankInfo = (race) =>
+  race.voteFor === 1
+    ? { label: "Left blank", col: "Blank", of: "ballots" }
+    : { label: "Undervotes", col: "Undervotes", of: "possible votes" };
+const blankOf = (race, r) =>
+  Number(r.ballots_cast) * race.voteFor - Number(r.total_votes);
+const blankShare = (race, r) =>
+  blankOf(race, r) / (Number(r.ballots_cast) * race.voteFor || 1);
+
 function drawTiles(race) {
   const box = document.getElementById("totals");
   box.replaceChildren();
@@ -825,6 +839,23 @@ function drawTiles(race) {
     d.append(n, v, s);
     box.appendChild(d);
   });
+  const d = dash.data(race.id);
+  if (d.status === "ok") {
+    const bi = blankInfo(race);
+    const blank = d3.sum(d.data, (r) => blankOf(race, r));
+    const possible = d3.sum(d.data, (r) => Number(r.ballots_cast)) * race.voteFor;
+    const tile = mk("div", "opx-tile");
+    const n = mk("div", "opx-tile-name");
+    const sw = mk("i", "opx-sw");
+    sw.style.background = BLANK_COLOR;
+    n.append(sw, bi.label);
+    tile.append(
+      n,
+      mk("div", "opx-tile-num", fmt(blank)),
+      mk("div", "opx-tile-share", pct(blank / possible) + " of " + bi.of),
+    );
+    box.appendChild(tile);
+  }
 }
 
 const viewsEl = document.querySelector(".opx-views");
@@ -871,10 +902,14 @@ function drawMap(race, cands) {
   }
   box.classList.remove("dash-skeleton");
   const byP = new Map(d.data.map((r) => [String(r.precinct), r]));
-  const view = cands.some((c) => c.name === dash.params().view)
-    ? dash.params().view
-    : "leader";
+  const bi = blankInfo(race);
+  const view =
+    dash.params().view === "blank" ||
+    cands.some((c) => c.name === dash.params().view)
+      ? dash.params().view
+      : "leader";
   const vc = cands.find((c) => c.name === view);
+  const isBlank = view === "blank";
 
   [
     {
@@ -882,14 +917,15 @@ function drawMap(race, cands) {
       label: race.voteFor === 1 ? "Winner by precinct" : "Leading candidate",
     },
   ]
-    .concat(cands.map((c) => ({ id: c.name, label: c.name, i: c.i })))
+    .concat(cands.map((c) => ({ id: c.name, label: c.name, color: candColor(c.i) })))
+    .concat([{ id: "blank", label: bi.label, color: BLANK_COLOR }])
     .forEach((v) => {
       const b = mk("button");
       b.type = "button";
       b.setAttribute("aria-pressed", String(v.id === view));
-      if (v.i !== undefined) {
+      if (v.color) {
         const sw = mk("i", "opx-sw");
-        sw.style.background = candColor(v.i);
+        sw.style.background = v.color;
         b.appendChild(sw);
       }
       b.append(v.label);
@@ -929,19 +965,19 @@ function drawMap(race, cands) {
   const inShapes = shapes.filter((sh) => sh.r);
   const bg = resolve("var(--color-bg)");
   const colors = cands.map((c) => resolve(candColor(c.i)));
+  // A candidate's share of votes, or the share of ballots (or possible votes) left blank
+  const shareOf = vc
+    ? (r) => Number(r[vc.name]) / Number(r.total_votes)
+    : isBlank
+      ? (r) => blankShare(race, r)
+      : null;
+  const shade = vc ? colors[vc.i] : isBlank ? resolve(BLANK_COLOR) : null;
   let fillOf, ext;
-  if (vc) {
-    ext = d3.extent(
-      inShapes,
-      (sh) => Number(sh.r[vc.name]) / Number(sh.r.total_votes),
-    );
-    const lo = d3.interpolateRgb(bg, colors[vc.i])(0.12);
-    const ramp = d3.interpolateRgb(lo, colors[vc.i]);
-    fillOf = (r) =>
-      ramp(
-        (Number(r[vc.name]) / Number(r.total_votes) - ext[0]) /
-          (ext[1] - ext[0] || 1),
-      );
+  if (shareOf) {
+    ext = d3.extent(inShapes, (sh) => shareOf(sh.r));
+    const lo = d3.interpolateRgb(bg, shade)(0.12);
+    const ramp = d3.interpolateRgb(lo, shade);
+    fillOf = (r) => ramp((shareOf(r) - ext[0]) / (ext[1] - ext[0] || 1));
   } else {
     const margin = (r) => {
       const x = ranked(r);
@@ -985,15 +1021,24 @@ function drawMap(race, cands) {
       }
       grid.append(sw, n, v, q);
     });
+    const sw = mk("i", "opx-sw");
+    sw.style.background = BLANK_COLOR;
+    const n = mk("span", "", bi.label + " (of " + bi.of + ")"),
+      v = mk("span", "v", fmt(blankOf(race, r)));
+    if (isBlank) {
+      n.style.fontWeight = "600";
+      v.style.fontWeight = "600";
+    }
+    grid.append(sw, n, v, mk("span", "p", pct(blankShare(race, r))));
     tip.appendChild(grid);
     placeTip(box, tip, event, String(r.precinct));
   }
 
-  if (vc) {
+  if (shareOf) {
     const w = mk("span");
     const ramp = mk("i", "opx-ramp");
-    ramp.style.background = `linear-gradient(90deg, ${d3.interpolateRgb(bg, colors[vc.i])(0.12)}, ${colors[vc.i]})`;
-    w.append(pct(ext[0]), ramp, pct(ext[1]));
+    ramp.style.background = `linear-gradient(90deg, ${d3.interpolateRgb(bg, shade)(0.12)}, ${shade})`;
+    w.append(pct(ext[0]), ramp, pct(ext[1]) + (isBlank ? " of " + bi.of : ""));
     legend.appendChild(w);
   } else {
     const led = new Set(inShapes.map((sh) => ranked(sh.r)[0].name));
@@ -1217,6 +1262,7 @@ function drawTable(race, cands) {
       cands.map((c) => ({ k: c.name, label: lastName(c.name), cand: true })),
     )
     .concat([
+      { k: "blank", label: blankInfo(race).col },
       {
         k: "top_candidate",
         label: race.referendum ? "Result" : "Top vote-getter",
@@ -1225,7 +1271,9 @@ function drawTable(race, cands) {
   const sortRows = tableHeader(head, cols, () => drawTable(race, cands));
   const d = dash.data(race.id);
   if (d.status !== "ok" || !cands.length) return;
-  const rows = sortRows(d.data);
+  const rows = sortRows(
+    d.data.map((r) => ({ ...r, blank: blankOf(race, r) })),
+  );
   rows.forEach((r) => {
     const tr = mk("tr");
     tr.dataset.key = String(r.precinct);
