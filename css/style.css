@@ -47,9 +47,9 @@ a { color: var(--accent); }
 .opx-title { font-family: var(--font-anthropic-sans); font-weight: 800; font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.15; letter-spacing: 0.02em; text-transform: uppercase; margin: 0; }
 .opx-masthead .opx-title::after { content: ""; display: block; width: 50px; margin: 16px 0 14px; border-top: 3px solid var(--accent-soft); }
 .opx-tagline { font-family: var(--font-anthropic-serif); font-size: 1.0625rem; line-height: 1.6; color: inherit; opacity: .85; margin: 0; }
-.opx-head h2 { font-family: var(--font-anthropic-sans); font-weight: 700; font-size: var(--cds-font-size-title); margin: 0 0 var(--cds-gap-xs); line-height: 1.25; }
+.opx-card .opx-head h2 { font-family: var(--font-anthropic-sans); font-weight: 700; font-size: var(--cds-font-size-title); margin: 0 0 var(--cds-gap-xs); line-height: 1.25; }
 .opx-sub { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin: 0 0 var(--cds-gap-sm); }
-.opx-take { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-body); line-height: 1.7; margin: 0; }
+.opx-take { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-body); line-height: 1.7; margin: var(--cds-gap-xs) 0 0; }
 .opx-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: var(--cds-gap-md); }
 .opx-tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-top: 3px solid var(--accent); border-radius: var(--cds-radius); padding: var(--cds-pad-md); display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
 .opx-tile-name { display: flex; align-items: center; gap: var(--cds-gap-xs); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
@@ -62,6 +62,7 @@ a { color: var(--accent); }
 .opx-card h2 { font-size: var(--cds-font-size-heading); font-weight: 700; margin: 0; }
 .opx-card h2::after { content: ""; display: block; width: 50px; margin-top: 10px; border-top: 3px solid var(--accent); }
 .opx-note { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-caption); line-height: 1.7; color: var(--color-fg-muted); margin: 0; }
+.opx-note:empty { display: none; }
 .opx-views { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); }
 .opx-views:empty { display: none; }
 .opx-views button { font: inherit; font-size: var(--cds-font-size-caption); font-weight: 600; padding: var(--cds-pad-xs) var(--cds-pad-md); border-radius: 999px; border: 1px solid var(--color-border-line); background: transparent; color: var(--color-fg); cursor: pointer; display: inline-flex; align-items: center; gap: var(--cds-gap-xs); }
