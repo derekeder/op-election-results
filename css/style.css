@@ -47,6 +47,7 @@ a { color: var(--accent); }
 .opx-title { font-family: var(--font-anthropic-sans); font-weight: 800; font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.15; letter-spacing: 0.02em; text-transform: uppercase; margin: 0; }
 .opx-masthead .opx-title::after { content: ""; display: block; width: 50px; margin: 16px 0 14px; border-top: 3px solid var(--accent-soft); }
 .opx-tagline { font-family: var(--font-anthropic-serif); font-size: 1.0625rem; line-height: 1.6; color: inherit; opacity: .85; margin: 0; }
+.opx-tagline a { color: #fff; }
 .opx-card .opx-head h2 { font-family: var(--font-anthropic-sans); font-weight: 700; font-size: var(--cds-font-size-title); margin: 0 0 var(--cds-gap-xs); line-height: 1.25; }
 .opx-sub { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin: 0 0 var(--cds-gap-sm); }
 .opx-take { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-body); line-height: 1.7; margin: var(--cds-gap-xs) 0 0; }
