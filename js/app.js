@@ -552,8 +552,27 @@ const ALL_RACES = [
 const HIDDEN_YEARS = ["2024", "2026"];
 const electionOf = (r) => r.election || r.year;
 const RACES = ALL_RACES.filter((r) => !HIDDEN_YEARS.includes(electionOf(r)));
+// A Turnout tab for each election, last in its row. Every race in an election has the
+// same ballots and registered voters per precinct, so turnout comes from the election's
+// first race (each election's first race covers all of Oak Park's precincts).
+[...new Set(RACES.filter((r) => !r.composite && !r.demographics).map(electionOf))]
+  .map((e) => RACES.find((r) => electionOf(r) === e))
+  .forEach((src) =>
+    RACES.push({
+      id: "turnout_" + electionOf(src),
+      year: src.year,
+      election: src.election,
+      tab: "Turnout",
+      turnout: true,
+      source: src.id,
+      date: src.date,
+      map: src.map,
+      boundaries: src.boundaries,
+      join: src.join,
+    }),
+  );
 
-RACES.filter((r) => !r.composite && !r.demographics).forEach((race) => {
+RACES.filter((r) => !r.composite && !r.demographics && !r.turnout).forEach((race) => {
   dash.calc("totals_" + race.id, {
     inputs: [race.id],
     title: race.year + " " + race.tab + " totals",
@@ -655,7 +674,7 @@ const mk = (tag, cls, text) => {
 // Election year tabs, then a tab for each race in the selected year
 const yearsEl = document.getElementById("years");
 const racesEl = document.getElementById("races");
-const kindOf = (r) => r.id.replace(/_\d{4}$/, "");
+const kindOf = (r) => (r.turnout ? "turnout" : r.id.replace(/_\d{4}$/, ""));
 const selectRace = (r) => {
   window.opx.sortKey = "precinct";
   window.opx.sortDir = 1;
@@ -866,6 +885,23 @@ const BOUNDARY_NOTES = {
   boundaries_2015:
     "Drawn on Oak Park’s 38 precincts used through 2015, so precinct numbers and lines don’t match today’s.",
 };
+// Notes that apply only to this race's map (renumbered or earlier precinct lines, partial districts)
+function mapNotes(race, d, bd) {
+  const notes = [];
+  if (race.join)
+    notes.push(
+      "Labels use 2023 precinct numbers; the lines are the same as today, renumbered in 2024.",
+    );
+  if (BOUNDARY_NOTES[race.boundaries])
+    notes.push(BOUNDARY_NOTES[race.boundaries]);
+  if (d.data.length < bd.data.length)
+    notes.push(
+      "Only " +
+        d.data.length +
+        " Oak Park precincts are in this district; the rest are left blank.",
+    );
+  return notes.join(" ");
+}
 function drawMap(race, cands) {
   const box = document.querySelector(".opx-mapbox");
   const tip = box.querySelector(".opx-tip");
@@ -932,21 +968,7 @@ function drawMap(race, cands) {
       b.addEventListener("click", () => dash.setParams({ view: v.id }));
       viewsEl.appendChild(b);
     });
-  // Notes that apply only to this race's map (renumbered or earlier precinct lines, partial districts)
-  const notes = [];
-  if (race.join)
-    notes.push(
-      "Labels use 2023 precinct numbers; the lines are the same as today, renumbered in 2024.",
-    );
-  if (BOUNDARY_NOTES[race.boundaries])
-    notes.push(BOUNDARY_NOTES[race.boundaries]);
-  if (d.data.length < bd.data.length)
-    notes.push(
-      "Only " +
-        d.data.length +
-        " Oak Park precincts are in this district; the rest are left blank.",
-    );
-  document.getElementById("map-note").textContent = notes.join(" ");
+  document.getElementById("map-note").textContent = mapNotes(race, d, bd);
 
   const ranked = (r) =>
     cands
@@ -1289,6 +1311,171 @@ function drawTable(race, cands) {
       const td = mk("td", c.cand && Number(v) === top ? "win" : "", text);
       tr.appendChild(td);
     });
+    tb.appendChild(tr);
+  });
+}
+
+// Turnout by precinct for one election: ballots cast over registered voters
+const TURNOUT_COLOR = "var(--c7)";
+const turnoutOf = (r) =>
+  Number(r.ballots_cast) / (Number(r.registered_voters) || 1);
+function drawTurnout(race) {
+  const d = dash.data(race.source),
+    bd = dash.data(race.boundaries || "boundaries");
+  const rows =
+    d.status === "ok"
+      ? d.data.map((r) => ({ ...r, turnout: turnoutOf(r) }))
+      : [];
+  const sorted = rows.slice().sort((a, b) => b.turnout - a.turnout);
+  const label = (ELECTIONS[electionOf(race)] || race.year) + " turnout";
+
+  // Header
+  document.getElementById("ov").hidden = false;
+  document.getElementById("race-title").textContent = label + " by precinct";
+  document.getElementById("race-sub").textContent =
+    race.date + " · Ballots cast as a share of registered voters";
+  const o = dash.data("overall_" + race.source);
+  const ob = document.getElementById("ov-ballots"),
+    ot = document.getElementById("ov-turnout");
+  [ob, ot].forEach((el) => {
+    el.dataset.source = "overall_" + race.source;
+    el.dataset.field = el === ob ? "ballots_cast" : "turnout";
+    el.classList.remove("dash-skeleton");
+  });
+  ob.textContent = o.status === "ok" ? fmt(o.data[0].ballots_cast) : "—";
+  ot.textContent = o.status === "ok" ? pct(o.data[0].turnout) : "—";
+  const take = document.getElementById("takeaway");
+  take.textContent = sorted.length
+    ? "Turnout ranged from " +
+      pct(sorted[sorted.length - 1].turnout) +
+      " in precinct " +
+      sorted[sorted.length - 1].precinct +
+      " to " +
+      pct(sorted[0].turnout) +
+      " in precinct " +
+      sorted[0].precinct +
+      "."
+    : "";
+
+  // Tiles
+  const box = document.getElementById("totals");
+  box.replaceChildren();
+  const tile = (name, num, sub) => {
+    const t = mk("div", "opx-tile");
+    t.append(
+      mk("div", "opx-tile-name", name),
+      mk("div", "opx-tile-num", num),
+      mk("div", "opx-tile-share", sub),
+    );
+    box.appendChild(t);
+  };
+  if (o.status === "ok") {
+    tile(
+      "Turnout",
+      pct(o.data[0].turnout),
+      fmt(o.data[0].ballots_cast) +
+        " of " +
+        fmt(o.data[0].registered) +
+        " registered voters",
+    );
+  }
+  const top3 = sorted.slice(0, 3),
+    bot3 = sorted.slice(-3).reverse();
+  const fmtT = (r) => pct(r.turnout);
+  if (sorted.length) {
+    tile(
+      "Highest turnout",
+      top3.map((r) => r.precinct).join(", "),
+      top3.map(fmtT).join(", "),
+    );
+    tile(
+      "Lowest turnout",
+      bot3.map((r) => r.precinct).join(", "),
+      bot3.map(fmtT).join(", "),
+    );
+  }
+
+  // Map
+  const mapBox = document.querySelector(".opx-mapbox"),
+    tip = mapBox.querySelector(".opx-tip"),
+    legend = document.getElementById("map-legend");
+  mapBox.querySelectorAll(".opx-fail, .opx-nomap").forEach((n) => n.remove());
+  legend.replaceChildren();
+  viewsEl.replaceChildren();
+  tip.hidden = true;
+  if (!rows.length || bd.status !== "ok") {
+    mapBox.classList.add("dash-skeleton");
+    return;
+  }
+  mapBox.classList.remove("dash-skeleton");
+  mapBox.dataset.source = (race.boundaries || "boundaries") + " " + race.source;
+  document.getElementById("map-note").textContent = mapNotes(race, d, bd);
+  const ext = d3.extent(rows, (r) => r.turnout);
+  const bg = resolve("var(--color-bg)"),
+    c = resolve(TURNOUT_COLOR);
+  const lo = d3.interpolateRgb(bg, c)(0.08);
+  const ramp = d3.interpolateRgb(lo, c);
+  const fill = (r) => ramp((r.turnout - ext[0]) / (ext[1] - ext[0] || 1));
+  const byP = new Map(rows.map((r) => [String(r.precinct), r]));
+  const jk = race.join || "precinct";
+  const shapes = bd.data.map((b) => ({
+    key: String(b[jk]),
+    r: byP.get(String(b[jk])),
+    polys: polysOf(geomOf(b.geometry)),
+  }));
+  drawPrecincts(mapBox, shapes, fill, (event, r) => {
+    tip.replaceChildren();
+    tip.appendChild(mk("div", "opx-tip-title", "Precinct " + r.precinct));
+    const grid = mk("div", "opx-tip-t");
+    const sw = mk("i", "opx-sw");
+    sw.style.background = fill(r);
+    grid.append(sw, mk("strong", "", "Turnout"), mk("strong", "v", pct(r.turnout)));
+    [
+      ["Ballots cast", fmt(Number(r.ballots_cast))],
+      ["Registered voters", fmt(Number(r.registered_voters))],
+    ].forEach(([name, value]) =>
+      grid.append(mk("i"), mk("span", "", name), mk("span", "v", value)),
+    );
+    tip.appendChild(grid);
+    placeTip(mapBox, tip, event, String(r.precinct));
+  });
+  const w = mk("span");
+  const bar = mk("i", "opx-ramp");
+  bar.style.background = `linear-gradient(90deg, ${lo}, ${c})`;
+  w.append(pct(ext[0]), bar, pct(ext[1]) + " turnout");
+  legend.appendChild(w);
+
+  // Table
+  document.getElementById("table-title").textContent = label + " by precinct";
+  document.getElementById("table-note").textContent =
+    "Select a column heading to sort.";
+  const table = document.querySelector(".opx-table");
+  table.dataset.source = race.source;
+  const head = table.querySelector("thead tr"),
+    tb = table.querySelector("tbody");
+  head.replaceChildren();
+  tb.replaceChildren();
+  const cols = [
+    { k: "precinct", label: "Precinct", format: (r) => String(r.precinct) },
+    {
+      k: "registered_voters",
+      label: "Registered",
+      format: (r) => fmt(Number(r.registered_voters)),
+    },
+    {
+      k: "ballots_cast",
+      label: "Ballots",
+      format: (r) => fmt(Number(r.ballots_cast)),
+    },
+    { k: "turnout", label: "Turnout", format: fmtT, main: true },
+  ];
+  const sortRows = tableHeader(head, cols, () => drawTurnout(race));
+  sortRows(rows).forEach((r) => {
+    const tr = mk("tr");
+    tr.dataset.key = String(r.precinct);
+    cols.forEach((col) =>
+      tr.appendChild(mk("td", col.main ? "win" : "", col.format(r))),
+    );
     tb.appendChild(tr);
   });
 }
@@ -2011,6 +2198,10 @@ dash.onData(() => {
   drawNav(race);
   if (race.composite) {
     drawLean(race);
+    return;
+  }
+  if (race.turnout) {
+    drawTurnout(race);
     return;
   }
   if (METRICS[race.id]) {

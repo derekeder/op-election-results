@@ -14,6 +14,8 @@ An interactive map and table of precinct-level results for Oak Park races:
 
 The 2024 and 2026 primaries are left out of the page's menu for now (`HIDDEN_YEARS` in `js/app.js`), but their data is still built and included in `js/data.js`; remove a year from that list to show it again. Races are grouped into elections by `year`, or by `election` when a year has more than one: the 2026 general election is `2026g`, so it shows while the 2026 primary stays hidden.
 
+Each election also gets a Turnout tab (`?race=turnout_2025`, or `turnout_2026g` for the 2026 general) mapping ballots cast over registered voters by precinct. Every race in an election has the same ballots and registered voters per precinct, so it reads them from the election's first race.
+
 Every race except the village and library ones reaches beyond Oak Park; the page shows only Oak Park precincts. Only five Oak Park precincts (17, 25, 29, 30 and 31) are in the 8th State House District.
 
 ## Viewing it
